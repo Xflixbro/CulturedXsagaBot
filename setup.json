@@ -1,7 +1,7 @@
  [
     {
         "session": "ses1",
-        "token": "BOT_TOKEN",
+        "token": "",
         "api_id": "27050683",
         "api_hash": "013a5c0b1f2c320b98236cf212835d59",
         "workers": 8,
