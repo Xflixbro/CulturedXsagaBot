@@ -7,6 +7,53 @@ PORT = '8000'
 OWNER_ID = 123456789
 MSG_EFFECT = 5046509860389126442
 
+# BOT CONFIGURATION
+# ===========================
+
+# Telegram API Credentials (Get from https://my.telegram.org)
+API_ID = 12345678
+API_HASH = "your_api_hash_here"
+BOT_TOKEN = "your_bot_token_here"
+
+# ===========================
+# DATABASE
+# ===========================
+
+# MongoDB Connection String
+DATABASE_URI = "mongodb://localhost:27017"
+DATABASE_NAME = "file_sharing_bot"
+
+# ===========================
+# CHANNELS
+# ===========================
+
+# Main Database Channel ID (where files are stored)
+DB_CHANNEL = -1001234567890
+
+# Force Subscribe Channels (users must join these)
+FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
+
+# ===========================
+# ADMIN
+# ===========================
+
+# Owner Telegram User ID
+OWNER_ID = 123456789
+
+# Admin User IDs (can use admin commands)
+ADMINS = [123456789]  # Example: [123456789, 987654321]
+
+# ===========================
+# SERVER (Optional)
+# ===========================
+
+# Port for webhook/web server
+PORT = 8080
+
+# Use webhook instead of polling
+WEBHOOK = False
+
+
 # VPLink URL Shortener Configuration
 VPLINK_API_TOKEN = "akenamebepuresososebandhadhaga"
 VPLINK_API_URL = "example.com"
