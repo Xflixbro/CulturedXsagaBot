@@ -13,7 +13,7 @@ MSG_EFFECT = 5046509860389126442
 # Telegram API Credentials (Get from https://my.telegram.org)
 API_ID = 27050683
 API_HASH = "013a5c0b1f2c320b98236cf212835d59"
-BOT_TOKEN = "your_bot_token_here"
+BOT_TOKEN = "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA"
 
 # ===========================
 # DATABASE
