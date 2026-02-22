@@ -2,13 +2,13 @@
     {
         "session": "ses1",
         "token": "BOT_TOKEN",
-        "api_id": "12345678",
-        "api_hash": "",
+        "api_id": "27050683",
+        "api_hash": "013a5c0b1f2c320b98236cf212835d59",
         "workers": 8,
-        "db_uri": "mongodb+srv://Awakeners-bots-Powered-by",
-        "db_name": "Awakenersbots",
+        "db_uri": "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+        "db_name": "CORNXVILLA",
         "fsubs": [],
-        "db": -1234567890,
+        "db": -1002162795137,
         "auto_del": 300,
         "messages": {
             "START": "<b><blockquote><b><blockquote>Moshi Moshi Senpai {mention}</blockquote></b>\n<b>I'm Akuma Sama a Filestore bot of @Anime_Mortals</b></blockquote>",
