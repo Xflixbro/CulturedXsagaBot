@@ -160,22 +160,76 @@ python main.py
 ---
 
 ## 📝 Commands
+# Telegram Bot – Command Reference
 
-### User Commands
-- `/start`
-- `/about`
-- `/premium`
-- `/mypremium`
+This document lists all available commands for the bot, based on the provided source code.
 
-### Admin Commands
-- `/batch`
-- `/genlink`
-- `/autobatch`
-- `/broadcast`
-- `/stats`
-- `/addpremium <user_id> [days]`
-- `/removepremium <user_id>`
-- `/settings`
+---
+
+## 👤 User Commands  
+*(Available to everyone)*
+
+| Command | Description |
+|--------|-------------|
+| `/start` | (Likely present) Starts the bot and shows the welcome message. |
+| `/credits` | Check your credit balance, expiry date, and referral statistics. |
+| `/referral` | Get your unique referral link and view earnings from referrals. |
+| `/buycredits` | Display available credit packages and start the purchase process. |
+| `/premium` | Show premium membership plans and their benefits. |
+| `/mypremium` | Check your own premium status and expiry date. |
+| `/checkpremium [user_id]` | Check premium status – for yourself (no argument) or for another user (if you are an admin). |
+| `/usage` | View system resource usage (CPU, RAM, disk, network). |
+
+---
+
+## 🔧 Admin Commands  
+*(Require the user to be in the bot’s admin list or be the owner)*
+
+### 💳 Credit System
+| Command | Description |
+|--------|-------------|
+| `/addcredit <user_id> <amount> [expiry_days]` | Add credits to a user with optional expiry. |
+| `/setcredit <user_id> <amount> [expiry_days]` | Set the exact credit amount for a user. |
+| `/removecredit <user_id>` | Remove all credits from a user. |
+| `/listcredits` | List all users who have credits (first 20). |
+| `/creditstats` | Show overall credit system statistics. |
+| `/approvepayment <payment_id>` | Manually approve a payment and credit the user. |
+
+### 🤖 Batch & Link Generation
+| Command | Description |
+|--------|-------------|
+| `/autobatch` | Start the manual batch creation process (send message links). |
+| `/cancelbatch` | Cancel an ongoing batch creation. |
+| `/batch` | Create a batch link from a range of messages (forward or links). |
+| `/genlink` | Generate a single file link from a forwarded message or post. |
+
+### 🚫 User Management
+| Command | Description |
+|--------|-------------|
+| `/ban <user_id> [user_id2 ...]` | Ban one or more users. |
+| `/unban <user_id> [user_id2 ...]` | Unban one or more users. |
+
+### 💎 Premium Management
+| Command | Description |
+|--------|-------------|
+| `/addpremium <user_id> [days]` | Grant premium to a user (use 0 days for lifetime). |
+| `/removepremium <user_id>` | Remove premium from a user. |
+| `/premiumusers` | List all premium users with remaining days. |
+
+### 🔁 Auto‑Forward (Owner Only)
+| Command | Description |
+|--------|-------------|
+| `/set_forward_config <source_id> <dest_id>` | Set source and destination channels for auto‑forwarding. |
+| `/forward_old <start_msg_id> <end_msg_id>` | Manually forward a range of old messages. |
+
+---
+
+**Notes:**
+
+- Some commands (especially admin ones) use interactive prompts – the bot will ask for additional input after the command.
+- The bot supports multiple instances via `setup.json`; commands apply to the specific bot you are talking to.
+- Settings like auto‑batch are configured through callback buttons in the admin panel, not by commands.
+- 
 
 ---
 
