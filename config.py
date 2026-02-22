@@ -4,15 +4,15 @@ from logging.handlers import RotatingFileHandler
 
 LOG_FILE_NAME = "bot.log"
 PORT = '8000'
-OWNER_ID = 123456789
+OWNER_ID = 6048003536
 MSG_EFFECT = 5046509860389126442
 
 # BOT CONFIGURATION
 # ===========================
 
 # Telegram API Credentials (Get from https://my.telegram.org)
-API_ID = 12345678
-API_HASH = "your_api_hash_here"
+API_ID = 27050683
+API_HASH = "013a5c0b1f2c320b98236cf212835d59"
 BOT_TOKEN = "your_bot_token_here"
 
 # ===========================
@@ -20,15 +20,15 @@ BOT_TOKEN = "your_bot_token_here"
 # ===========================
 
 # MongoDB Connection String
-DATABASE_URI = "mongodb://localhost:27017"
-DATABASE_NAME = "file_sharing_bot"
+DATABASE_URI = "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_NAME = "CORNXVILLA"
 
 # ===========================
 # CHANNELS
 # ===========================
 
 # Main Database Channel ID (where files are stored)
-DB_CHANNEL = -1001234567890
+DB_CHANNEL = -1002162795137
 
 # Force Subscribe Channels (users must join these)
 FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
@@ -37,21 +37,27 @@ FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
 # ADMIN
 # ===========================
 
-# Owner Telegram User ID
-OWNER_ID = 123456789
-
 # Admin User IDs (can use admin commands)
-ADMINS = [123456789]  # Example: [123456789, 987654321]
+ADMINS = [6048003536]  # Example: [123456789, 987654321]
 
 # ===========================
 # SERVER (Optional)
 # ===========================
 
-# Port for webhook/web server
-PORT = 8080
-
 # Use webhook instead of polling
 WEBHOOK = False
+
+# CUSTOMIZATION (Optional)
+# ===========================
+
+# Auto delete timer (seconds, 0 to disable)
+AUTO_DELETE = 300
+
+# Protect content (prevent forwarding)
+PROTECT_CONTENT = False
+
+# Disable share button
+DISABLE_BUTTON = False
 
 
 # VPLink URL Shortener Configuration
