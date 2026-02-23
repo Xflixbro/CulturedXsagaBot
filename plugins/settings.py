@@ -10,6 +10,9 @@ from helper.font_converter import to_small_caps as sc
 
 @Client.on_callback_query(filters.regex("^settings$"))
 async def settings(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**{sc(f'Settings of @{client.username}')}:**</blockquote>
 **{sc('Force Sub Channels')}:** `{len(client.fsub_dict)}`
 **{sc('Auto Delete Timer')}:** `{client.auto_del}`
@@ -42,6 +45,9 @@ async def settings(client, query):
 
 @Client.on_callback_query(filters.regex("^fsub$"))
 async def fsub(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Force Subscription Settings:**</blockquote>
 **Force Subscribe Channel IDs:** `{ {a for a in client.fsub_dict.keys()} }`
 
@@ -54,8 +60,62 @@ __Use the appropriate button below to add or remove a force subscription channel
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+@Client.on_callback_query(filters.regex("^add_fsub$"))
+async def add_fsub(client: Client, query: CallbackQuery):
+    await query.answer()
+    ask_channel_info = await client.ask(query.from_user.id, "Send channel id(negative integer value), request boolean(yes/no/true/false), timers(integer without decimal)(to enable it keep it greator than 0 otherwise the invite link will not have any timer to invalidate it) seperated by a space in the next 60 seconds!\n<blockquote expandable>Eg: `-10089479289 yes 5`\n\n__It means `-10089479289` is the force sub channel id, `yes` means to enable request it means the link will be request link and only after user sends request to the channel bot will work for that user even if you do not accept his request or user is not a member, `5` means timer in minutes aftetr 5 minutes the invite link will be expired.__</blockquote>", filters=filters.text, timeout=60)
+    try:
+        channel_info = ask_channel_info.text.split()
+        channel_id, request, timer = channel_info
+        channel_id = int(channel_id)
+        if channel_id in client.fsub_dict.keys():
+            return await ask_channel_info.reply("**This channel id already exists in force sub list, remove it to change it's configuration!!**")
+        val, res = await is_bot_admin(client, channel_id)
+        if not val:
+            return await ask_channel_info.reply(f"**Error:** `{res}`")
+        if request.lower() in ('true', 'on', 'yes'):
+            request = True
+        elif request.lower() in ('false', 'off', 'no'):
+            request = False
+        else:
+            raise Exception("Invalid request value or type.")
+        if timer.isdigit():
+            timer = int(timer)
+        else:
+            raise Exception("Timer is not a valid integer.")
+        chat = await client.get_chat(channel_id)
+        name = chat.title
+        if timer > 0:
+            client.fsub_dict[channel_id] = [name, None, request, timer]
+        else:
+            chat_link = await client.create_chat_invite_link(channel_id, creates_join_request=request)
+            link = chat_link.invite_link
+            client.fsub_dict[channel_id] = [name, link, request, timer]
+        await fsub(client, query)
+        return await ask_channel_info.reply(f"__Channel with name: `{name.strip()}` is added as a force sub channel!!__")
+    except Exception as e:
+        return await ask_channel_info.reply(f"**Error:** `{e}`")
+    
+@Client.on_callback_query(filters.regex('^rm_fsub$'))
+async def rm_fsub(client: Client, query: CallbackQuery):
+    await query.answer()
+    ask_channel_info = await client.ask(query.from_user.id, "Send channel id(negative integer value) in the next 60 seconds!", filters=filters.text, timeout=60)
+    try:
+        channel_id = int(ask_channel_info.text)
+        if channel_id not in client.fsub_dict.keys():
+            return await ask_channel_info.reply("**This channel id is not in force sub list!**")
+        
+        client.fsub_dict.pop(channel_id)
+        await fsub(client, query)
+        return await ask_channel_info.reply(f"__Channel with id: `{channel_id}` has been removed as a force sub channel!!__")
+    except Exception as e:
+        return await ask_channel_info.reply(f"**Error:** `{e}`")
+
 @Client.on_callback_query(filters.regex("^db_channels$"))
 async def db_channels(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     channels = await client.mongodb.get_db_channels()
     multi_db_enabled = await client.mongodb.is_multi_db_enabled()
     
@@ -86,6 +146,9 @@ async def db_channels(client, query):
 
 @Client.on_callback_query(filters.regex("^add_db_channel$"))
 async def add_db_channel_cb(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**➕ Add DB Channel:**</blockquote>
     
 __Forward a message from the channel OR send the Channel ID.__
@@ -124,6 +187,9 @@ _Timeout: 60s_
 
 @Client.on_callback_query(filters.regex("^rm_db_channel$"))
 async def rm_db_channel_cb(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**➖ Remove DB Channel:**</blockquote>
     
 __Send the Channel ID to remove.__
@@ -146,6 +212,9 @@ _Timeout: 60s_
 
 @Client.on_callback_query(filters.regex("^toggle_multi_db$"))
 async def toggle_multi_db_cb(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     new_status = await client.mongodb.toggle_multi_db()
     status_text = sc('enabled') if new_status else sc('disabled')
     await query.answer(f"✅ {sc('multi-db system')} {status_text}!", show_alert=True)
@@ -153,7 +222,9 @@ async def toggle_multi_db_cb(client, query):
 
 @Client.on_callback_query(filters.regex("^premium_users_settings$"))
 async def premium_users_settings(client, query):
-    """Premium users management panel"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     users = await client.mongodb.get_premium_users()
     
     msg = f"""<blockquote>**💎 {sc('premium users management')}:**</blockquote>
@@ -167,7 +238,7 @@ async def premium_users_settings(client, query):
         now = datetime.now()
         
         msg += f"**{sc('active premium users')}:**\n"
-        for i, uid in enumerate(users[:10], 1):  # Show first 10
+        for i, uid in enumerate(users[:10], 1):
             data = await client.mongodb.user_data.find_one({"_id": uid})
             exp = data.get("premium_expire") if data else None
             
@@ -196,7 +267,9 @@ async def premium_users_settings(client, query):
 
 @Client.on_callback_query(filters.regex("^view_all_premium$"))
 async def view_all_premium(client, query):
-    """View all premium users"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     users = await client.mongodb.get_premium_users()
     
     if not users:
@@ -230,7 +303,9 @@ async def view_all_premium(client, query):
 
 @Client.on_callback_query(filters.regex("^add_premium_user$"))
 async def add_premium_user_cb(client, query):
-    """Add premium user via settings"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**➕ {sc('add premium user')}:**</blockquote>
 
 {sc('send user id and days separated by space')}
@@ -245,7 +320,6 @@ _{sc('timeout')}: 60s_
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
     
     try:
-
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
         
         parts = res.text.strip().split()
@@ -288,7 +362,9 @@ _{sc('timeout')}: 60s_
 
 @Client.on_callback_query(filters.regex("^remove_premium_user$"))
 async def remove_premium_user_cb(client, query):
-    """Remove premium user via settings"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**➖ {sc('remove premium user')}:**</blockquote>
 
 {sc('send user id to remove premium')}
@@ -301,7 +377,6 @@ _{sc('timeout')}: 60s_
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
     
     try:
-
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
         
         try:
@@ -333,7 +408,10 @@ _{sc('timeout')}: 60s_
 
 @Client.on_callback_query(filters.regex("^auto_batch_settings$"))
 async def auto_batch_settings(client, query):
-    enabled = await client.mongodb.get_bot_config('auto_batch_enabled', False) # Default FALSE now
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    enabled = await client.mongodb.get_bot_config('auto_batch_enabled', False)
     mode = await client.mongodb.get_bot_config('auto_batch_mode', 'episode')
     window = await client.mongodb.get_bot_config('auto_batch_time_window', 30)
 
@@ -359,6 +437,9 @@ __{sc('Turning this OFF will stop those annoying messages!')}__
 
 @Client.on_callback_query(filters.regex("^toggle_auto_batch$"))
 async def toggle_auto_batch(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     current = await client.mongodb.get_bot_config('auto_batch_enabled', False)
     await client.mongodb.set_bot_config('auto_batch_enabled', not current)
     await query.answer(f"Auto-Batch {'Disabled' if current else 'Enabled'}!")
@@ -366,6 +447,9 @@ async def toggle_auto_batch(client, query):
 
 @Client.on_callback_query(filters.regex("^toggle_batch_mode$"))
 async def toggle_batch_mode(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     current = await client.mongodb.get_bot_config('auto_batch_mode', 'episode')
     new_mode = 'season' if current == 'episode' else 'episode'
     await client.mongodb.set_bot_config('auto_batch_mode', new_mode)
@@ -374,8 +458,8 @@ async def toggle_batch_mode(client, query):
 
 @Client.on_callback_query(filters.regex("^admins$"))
 async def admins(client, query):
-    if not (query.from_user.id==OWNER_ID):
-        return await query.answer('This can only be used by owner.')
+    if not (query.from_user.id == OWNER_ID):
+        return await query.answer('Only the owner can access this!', show_alert=True)
     msg = f"""<blockquote>**Admin Settings:**</blockquote>
 **Admin User IDs:** {", ".join(f"`{a}`" for a in client.admins)}
 
@@ -388,8 +472,49 @@ __Use the appropriate button below to add or remove an admin based on your needs
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+@Client.on_callback_query(filters.regex("^add_admin$"))
+async def add_new_admins(client, query):
+    await query.answer()
+    if not query.from_user.id in client.admins:
+        return await client.send_message(query.from_user.id, client.reply_text)
+    ids_msg = await client.ask(query.from_user.id, "Send user ids seperated by a space in the next 60 seconds!\nEg: `838278682 83622928 82789928`", filters=filters.text, timeout=60)
+    ids = ids_msg.text.split()
+    
+    try:
+        for identifier in ids:
+            if int(identifier) not in client.admins:
+                client.admins.append(int(identifier))
+            
+    except Exception as e:
+        return await ids_msg.reply(f"Error: {e}")
+    await admins(client, query)
+    return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been promoted!!__")
+    
+@Client.on_callback_query(filters.regex("^rm_admin$"))
+async def remove_admins(client, query):
+    await query.answer()
+    if not query.from_user.id in client.admins:
+        return await client.send_message(query.from_user.id, client.reply_text)
+    ids_msg = await client.ask(query.from_user.id, "Send user ids seperated by a space in the next 60 seconds!\nEg: `838278682 83622928 82789928`", filters=filters.text, timeout=60)
+    ids = ids_msg.text.split()
+    
+    try:
+        for identifier in ids:
+            if int(identifier) == client.owner:
+                await client.send_message(query.from_user.id, "Nigga i can never remove the owner from the admin list!!")
+                continue
+            if int(identifier) in client.admins:
+                client.admins.remove(int(identifier))
+    except Exception as e:
+        return await ids_msg.reply(f"Error: {e}")
+    await admins(client, query)
+    return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been removed!!__")
+
 @Client.on_callback_query(filters.regex("^photos$"))
 async def photos(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Force Subscription Settings:**</blockquote>
 **Start Photo:** `{client.messages.get("START_PHOTO", "None")}`
 **Force Sub Photo:** `{client.messages.get('FSUB_PHOTO', 'None')}`
@@ -419,11 +544,17 @@ __Use the appropriate button below to add or remove any admin based on your need
 
 @Client.on_callback_query(filters.regex("^protect$"))
 async def protect(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     client.protect = False if client.protect else True
     return await settings(client, query)
 
 @Client.on_callback_query(filters.regex("^url_shorteners$"))
 async def url_shorteners(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**URL Shortener Settings:**</blockquote>
 **Configured Providers:** `{len(URL_SHORTENERS)}`
 **Active Providers:** `{len([k for k, v in URL_SHORTENERS.items() if v.get('active', False)])}`
@@ -454,6 +585,9 @@ async def url_shorteners(client, query):
 
 @Client.on_callback_query(filters.regex("^auto_del$"))
 async def auto_del(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Change Auto Delete Time:**</blockquote>
 **Current Timer:** `{client.auto_del}`
 
@@ -480,6 +614,9 @@ __Enter new integer value of auto delete timer, keep 0 to disable auto delete an
 
 @Client.on_callback_query(filters.regex("^texts$"))
 async def texts(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Text Configuration:**</blockquote>
 **Start Message:**
 <pre>{client.messages.get('START', 'Empty')}</pre>
@@ -500,18 +637,27 @@ async def texts(client, query):
 
 @Client.on_callback_query(filters.regex('^rm_start_photo$'))
 async def rm_start_photo(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     client.messages['START_PHOTO'] = ''
     await query.answer()
     await photos(client, query)
 
 @Client.on_callback_query(filters.regex('^rm_fsub_photo$'))
 async def rm_fsub_photo(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     client.messages['FSUB_PHOTO'] = ''
     await query.answer()
     await photos(client, query)
 
 @Client.on_callback_query(filters.regex("^add_start_photo$"))
 async def add_start_photo(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Change Start Image:**</blockquote>
 **Current Start Image:** `{client.messages.get('START_PHOTO', '')}`
 
@@ -535,6 +681,9 @@ __Enter new link of start image or send the photo, or wait for 60 second timeout
 
 @Client.on_callback_query(filters.regex("^add_fsub_photo$"))
 async def add_fsub_photo(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Change Force Sub Image:**</blockquote>
 **Current Force Sub Image:** `{client.messages.get('FSUB_PHOTO', '')}`
 
@@ -560,17 +709,14 @@ __Enter new link of fsub image or send the photo, or wait for 60 second timeout 
 # URL Shortener Management Callbacks
 @Client.on_callback_query(filters.regex("^add_shortener$"))
 async def add_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**Add New URL Shortener Provider:**</blockquote>
 
 __Send the provider details in this format:__
-```
-provider_key|Provider Name|API URL|API Token|Format
-```
 
 **Example:**
-```
-bitly|Bitly|https://api-ssl.bitly.com/v4/shorten|YOUR_TOKEN|json
-```
 
 **Supported Formats:**
 • `text` - Returns plain text URL
@@ -608,6 +754,9 @@ __Send the details or wait for 60 second timeout to be completed!__
 
 @Client.on_callback_query(filters.regex("^edit_shortener$"))
 async def edit_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
@@ -641,14 +790,8 @@ async def edit_shortener(client, query):
 • Active: `{"Yes" if provider.get('active', False) else "No"}`
 
 __Send new details in format:__
-```
-Name|API URL|API Token|Format|Active(1/0)
-```
 
 **Example:**
-```
-Bitly Updated|https://api.bitly.com/v4/shorten|NEW_TOKEN|json|1
-```
 """
         await query.message.edit_text(msg)
         try:
@@ -679,6 +822,9 @@ Bitly Updated|https://api.bitly.com/v4/shorten|NEW_TOKEN|json|1
 
 @Client.on_callback_query(filters.regex("^toggle_shortener$"))
 async def toggle_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
@@ -714,6 +860,9 @@ async def toggle_shortener(client, query):
 
 @Client.on_callback_query(filters.regex("^rm_shortener$"))
 async def rm_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
@@ -747,6 +896,9 @@ async def rm_shortener(client, query):
 
 @Client.on_callback_query(filters.regex("^global_token_toggle$"))
 async def global_token_toggle(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     current_status = await client.mongodb.get_bot_config('token_verification_enabled', True)
     new_status = not current_status
     await client.mongodb.set_bot_config('token_verification_enabled', new_status)
@@ -755,6 +907,9 @@ async def global_token_toggle(client, query):
 
 @Client.on_callback_query(filters.regex("^anti_bypass_settings$"))
 async def anti_bypass_settings(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     bypass_check_enabled = await client.mongodb.get_bot_config('bypass_check_enabled', True)
     bypass_timer = await client.mongodb.get_bot_config('bypass_timer', 60)
     
@@ -778,6 +933,9 @@ __{sc('This system prevents users from solving the shortener too quickly (skippi
 
 @Client.on_callback_query(filters.regex("^toggle_bypass_check$"))
 async def toggle_bypass_check(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     current = await client.mongodb.get_bot_config('bypass_check_enabled', True)
     await client.mongodb.set_bot_config('bypass_check_enabled', not current)
     await query.answer(f"{sc('Anti-Bypass System')} {'Disabled' if current else 'Enabled'}!")
@@ -785,6 +943,9 @@ async def toggle_bypass_check(client, query):
 
 @Client.on_callback_query(filters.regex("^set_bypass_timer$"))
 async def set_bypass_timer(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**{sc('change anti-bypass timer')}:**</blockquote>
     
 __{sc('enter the minimum time (in seconds) a user must take to solve the shortener')}.__
