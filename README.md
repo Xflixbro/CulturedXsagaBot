@@ -20,6 +20,7 @@
 A powerful Telegram bot for file sharing with advanced features including batch processing, premium memberships, multi-database channel support, URL shortening with token verification, and comprehensive admin controls.
 
 ---
+### user can't see setting
 
 ## ✨ Features
 
