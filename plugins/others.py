@@ -53,11 +53,12 @@ def home_buttons_admin():
     ])
 
 def about_submenu_buttons():
-    """Buttons shown inside About – Channels and Credit"""
+    """Buttons shown inside About – Channels, Credit, Settings, Back"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Channels", callback_data="channels_menu"),
          InlineKeyboardButton("Credit", callback_data="credit_info")],
-        [InlineKeyboardButton("🔙 Back", callback_data="home")]
+        [InlineKeyboardButton("Settings", callback_data="settings"),
+         InlineKeyboardButton("🔙 Back", callback_data="home")]
     ])
 
 def channels_menu_buttons():
@@ -92,7 +93,7 @@ async def home_callback(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex('^about$'))
 async def about_callback(client: Client, query: CallbackQuery):
-    """About page – now shows Channels and Credit submenu"""
+    """About page – now shows Channels, Credit, and Settings submenu"""
     about_text = client.messages.get('ABOUT', 'About this bot').format(
         owner_id=client.owner,
         bot_username=client.username,
