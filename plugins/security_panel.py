@@ -12,9 +12,9 @@ from datetime import datetime
 
 @Client.on_callback_query(filters.regex("^security_panel$"))
 async def security_panel(client, query):
-    """Security and token management panel"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴀᴄᴄᴇꜱꜱ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     # Get credit system status
     credit_enabled = await client.mongodb.is_credit_system_enabled()
@@ -51,9 +51,9 @@ async def security_panel(client, query):
 
 @Client.on_callback_query(filters.regex("^toggle_credits$"))
 async def toggle_credits(client, query):
-    """Toggle credit system on/off"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴅᴏ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     current_status = await client.mongodb.is_credit_system_enabled()
     new_status = not current_status
@@ -71,9 +71,9 @@ async def toggle_credits(client, query):
 
 @Client.on_callback_query(filters.regex("^token_management$"))
 async def token_management(client, query):
-    """Token management panel"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴀᴄᴄᴇꜱꜱ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     # Get current settings
     token_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
@@ -102,9 +102,9 @@ async def token_management(client, query):
 
 @Client.on_callback_query(filters.regex("^toggle_token_verification$"))
 async def toggle_token_verification(client, query):
-    """Toggle token verification on/off"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴅᴏ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     current_status = await client.mongodb.get_bot_config('token_verification_enabled', True)
     new_status = not current_status
@@ -118,9 +118,9 @@ async def toggle_token_verification(client, query):
 
 @Client.on_callback_query(filters.regex("^set_token_expiry$"))
 async def set_token_expiry(client, query):
-    """Show token expiry options"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴀᴄᴄᴇꜱꜱ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     current_expiry = await client.mongodb.get_bot_config('token_expiry_minutes', 10)
     
@@ -151,11 +151,11 @@ async def set_token_expiry(client, query):
     except Exception:
         pass
 
-@Client.on_callback_query(filters.regex("^expiry_(\d+)$"))
+@Client.on_callback_query(filters.regex("^expiry_(\\d+)$"))
 async def update_token_expiry(client, query):
-    """Update token expiry time"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴅᴏ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     # Extract minutes from callback data
     minutes = int(query.data.split("_")[1])
@@ -176,9 +176,9 @@ async def update_token_expiry(client, query):
 
 @Client.on_callback_query(filters.regex("^bypass_stats$"))
 async def bypass_stats(client, query):
-    """Show bypass attempt statistics"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴠɪᴇᴡ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     stats = await client.mongodb.get_bypass_stats()
     
@@ -210,9 +210,9 @@ async def bypass_stats(client, query):
 
 @Client.on_callback_query(filters.regex("^shortener_stats$"))
 async def shortener_stats(client, query):
-    """Show shortener click statistics"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴠɪᴇᴡ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     # Get overall statistics
     stats = await client.mongodb.get_shortener_stats()
@@ -251,9 +251,9 @@ async def shortener_stats(client, query):
 
 @Client.on_callback_query(filters.regex("^clear_bypass_logs$"))
 async def clear_bypass_logs(client, query):
-    """Clear all bypass logs"""
     if query.from_user.id not in client.admins:
-        return await query.answer("ᴏɴʟʏ ᴀᴅᴍɪɴꜱ ᴄᴀɴ ᴅᴏ ᴛʜɪꜱ!", show_alert=True)
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     
     # Clear all bypass attempts
     await client.mongodb.bypass_attempts.delete_many({})
