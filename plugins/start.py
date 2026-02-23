@@ -11,6 +11,9 @@ import humanize
 import secrets
 import json
 
+# Import the new button functions from others.py
+from plugins.others import home_buttons, home_buttons_admin
+
 # Load credit configuration
 try:
     with open("setup.json", "r") as f:
@@ -455,16 +458,11 @@ async def start_command(client: Client, message: Message):
         return
 
     # ---------------- NORMAL /start UI ----------------
-    buttons = [
-        [InlineKeyboardButton("💎 ᴘʀᴇᴍɪᴜᴍ ᴘʟᴀɴꜱ", callback_data="premium_plans")],
-        [InlineKeyboardButton("⌜ᴡᴇʙsᴇʀɪᴇs ɴᴇᴛᴡᴏʀᴋ⌟", url="https://t.me/Omniseries"),
-         InlineKeyboardButton("⌜ɴᴇᴛᴡᴏʀᴋ⌟", url="https://t.me/The_Mortals")],
-        [InlineKeyboardButton("⌜ᴀʙᴏᴜᴛ⌟", callback_data="about"),
-         InlineKeyboardButton("⌜ᴅᴇᴠ⌟", url="https://t.me/GPGMS0")]
-    ]
-
+    # Use the new button layouts from others.py
     if user_id in client.admins:
-        buttons.insert(0, [InlineKeyboardButton("⌜ꜱᴇᴛᴛɪɴɢꜱ⌟", callback_data="settings")])
+        markup = home_buttons_admin()
+    else:
+        markup = home_buttons()
     
     photo = client.messages.get("START_PHOTO", "")
     if photo:
@@ -478,7 +476,7 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=markup
         )
     else:
         await client.send_message(
@@ -490,5 +488,5 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=markup
         )
