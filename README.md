@@ -57,6 +57,28 @@ A powerful Telegram bot for file sharing with advanced features including batch 
 
 ---
 
+### 3️⃣ Configuration
+
+Create a `config.py` file:
+
+```python
+API_ID = 12345678
+API_HASH = "your_api_hash"
+BOT_TOKEN = "your_bot_token"
+
+DATABASE_URI = "mongodb://localhost:27017"
+DATABASE_NAME = "file_sharing_bot"
+
+DB_CHANNEL = -1001234567890
+FORCE_SUB_CHANNELS = []
+
+OWNER_ID = 123456789
+ADMINS = [123456789]
+
+PORT = 8080
+WEBHOOK = False
+```
+
 ## 🚀 Installation
 
 ### 1️⃣ Clone the Repository
