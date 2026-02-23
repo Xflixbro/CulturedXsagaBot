@@ -34,35 +34,30 @@ DISCLAIMER_TEXT = """
 # ==================== BUTTON LAYOUT FUNCTIONS ====================
 
 def home_buttons():
-    """Page 1 buttons (normal user)"""
+    """Home page buttons (normal user) – no Next button"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
          InlineKeyboardButton("About", callback_data="about")],
         [InlineKeyboardButton("Premium", callback_data="premium_plans"),
-         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)],
-        [InlineKeyboardButton("Next ➡️", callback_data="page_two")]
+         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)]
     ])
 
 def home_buttons_admin():
-    """Home page with Settings button for admins"""
+    """Home page with Settings button for admins – no Next button"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("⌜ꜱᴇᴛᴛɪɴɢꜱ⌟", callback_data="settings")],
         [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
          InlineKeyboardButton("About", callback_data="about")],
         [InlineKeyboardButton("Premium", callback_data="premium_plans"),
-         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)],
-        [InlineKeyboardButton("Next ➡️", callback_data="page_two")]
+         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)]
     ])
 
-def page_two_buttons():
-    """Page 2 buttons"""
+def about_submenu_buttons():
+    """Buttons shown inside About – Channels and Credit"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
-         InlineKeyboardButton("About", callback_data="about")],
-        [InlineKeyboardButton("Premium", callback_data="premium_plans"),
-         InlineKeyboardButton("Channels", callback_data="channels_menu")],
-        [InlineKeyboardButton("⬅️ Previous", callback_data="home"),
-         InlineKeyboardButton("Credit", callback_data="credit_info")]
+        [InlineKeyboardButton("Channels", callback_data="channels_menu"),
+         InlineKeyboardButton("Credit", callback_data="credit_info")],
+        [InlineKeyboardButton("🔙 Back", callback_data="home")]
     ])
 
 def channels_menu_buttons():
@@ -80,7 +75,7 @@ def channels_menu_buttons():
 
 @Client.on_callback_query(filters.regex('^home$'))
 async def home_callback(client: Client, query: CallbackQuery):
-    """New home menu (Page 1) – with admin check"""
+    """Home page – with admin check"""
     user_id = query.from_user.id
     if user_id in client.admins:
         markup = home_buttons_admin()
@@ -95,12 +90,21 @@ async def home_callback(client: Client, query: CallbackQuery):
         parse_mode=enums.ParseMode.HTML
     )
 
-@Client.on_callback_query(filters.regex('^page_two$'))
-async def page_two_callback(client: Client, query: CallbackQuery):
-    """Page 2 – no title, just buttons"""
+@Client.on_callback_query(filters.regex('^about$'))
+async def about_callback(client: Client, query: CallbackQuery):
+    """About page – now shows Channels and Credit submenu"""
+    about_text = client.messages.get('ABOUT', 'About this bot').format(
+        owner_id=client.owner,
+        bot_username=client.username,
+        first=query.from_user.first_name,
+        last=query.from_user.last_name,
+        username=None if not query.from_user.username else '@' + query.from_user.username,
+        mention=query.from_user.mention,
+        id=query.from_user.id
+    )
     await query.message.edit_text(
-        text="**More Options**",   # Simple heading instead of "Page 2"
-        reply_markup=page_two_buttons(),
+        text=about_text + "\n\n**Select an option below:**",
+        reply_markup=about_submenu_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
 
@@ -141,25 +145,7 @@ async def close_callback(client: Client, query: CallbackQuery):
     """Delete the message"""
     await query.message.delete()
 
-# -------------------- Existing about and premium_plans callbacks (keep) --------------------
-
-@Client.on_callback_query(filters.regex('^about$'))
-async def about(client: Client, query: CallbackQuery):
-    buttons = [[InlineKeyboardButton("🏠 Home", callback_data="home")]]
-    await query.message.edit_text(
-        text=client.messages.get('ABOUT', 'No Start Message').format(
-            owner_id=client.owner,
-            bot_username=client.username,
-            first=query.from_user.first_name,
-            last=query.from_user.last_name,
-            username=None if not query.from_user.username else '@' + query.from_user.username,
-            mention=query.from_user.mention,
-            id=query.from_user.id
-        ),
-        reply_markup=InlineKeyboardMarkup(buttons),
-        parse_mode=enums.ParseMode.HTML
-    )
-    return
+# -------------------- Premium plans callback (unchanged) --------------------
 
 @Client.on_callback_query(filters.regex('^premium_plans$'))
 async def premium_plans_callback(client: Client, query: CallbackQuery):
