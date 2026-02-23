@@ -716,3 +716,252 @@ async def add_shortener(client, query):
     msg = f"""<blockquote>**Add New URL Shortener Provider:**</blockquote>
 
 __Send the provider details in this format:__
+
+**Example:**
+
+**Supported Formats:**
+• `text` - Returns plain text URL
+• `json` - Returns JSON response
+
+__Send the details or wait for 60 second timeout to be completed!__
+"""
+    await query.answer()
+    await query.message.edit_text(msg)
+    try:
+        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+        details = res.text.strip().split('|')
+        
+        if len(details) != 5:
+            return await query.message.edit_text("**Invalid format! Please use: provider_key|Name|API_URL|Token|Format**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+        provider_key, name, api_url, api_token, format_type = details
+        
+        if provider_key in URL_SHORTENERS:
+            return await query.message.edit_text(f"**Provider '{provider_key}' already exists!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+        URL_SHORTENERS[provider_key] = {
+            'name': name,
+            'api_url': api_url,
+            'api_token': api_token,
+            'format': format_type,
+            'active': True
+        }
+        
+        return await query.message.edit_text(f"**✅ Provider '{name}' added successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+    except ListenerTimeout:
+        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+
+
+@Client.on_callback_query(filters.regex("^edit_shortener$"))
+async def edit_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    if not URL_SHORTENERS:
+        return await query.answer("No providers configured!")
+    
+    msg = f"""<blockquote>**Edit URL Shortener Provider:**</blockquote>
+
+**Available Providers:**
+"""
+    for key, provider in URL_SHORTENERS.items():
+        status = "✅" if provider.get('active', False) else "❌"
+        msg += f"{status} `{key}` - {provider['name']}\n"
+    
+    msg += f"\n__Send the provider key to edit or wait for 60 second timeout to be completed!__"
+    
+    await query.answer()
+    await query.message.edit_text(msg)
+    try:
+        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+        provider_key = res.text.strip()
+        
+        if provider_key not in URL_SHORTENERS:
+            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+        provider = URL_SHORTENERS[provider_key]
+        msg = f"""<blockquote>**Edit Provider: {provider['name']}**</blockquote>
+
+**Current Settings:**
+• Name: `{provider['name']}`
+• API URL: `{provider['api_url']}`
+• Token: `{provider.get('api_token', 'Not set')[:15]}...`
+• Format: `{provider.get('format', 'text')}`
+• Active: `{"Yes" if provider.get('active', False) else "No"}`
+
+__Send new details in format:__
+
+**Example:**
+"""
+        await query.message.edit_text(msg)
+        try:
+            res2 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+            details = res2.text.strip().split('|')
+            
+            if len(details) != 5:
+                return await query.message.edit_text("**Invalid format! Use: Name|API_URL|Token|Format|Active(1/0)**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            
+            name, api_url, api_token, format_type, active = details
+            
+            URL_SHORTENERS[provider_key] = {
+                'name': name,
+                'api_url': api_url,
+                'api_token': api_token,
+                'format': format_type,
+                'active': active == '1'
+            }
+            
+            return await query.message.edit_text(f"**✅ Provider '{name}' updated successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            
+        except ListenerTimeout:
+            return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+    except ListenerTimeout:
+        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+
+
+@Client.on_callback_query(filters.regex("^toggle_shortener$"))
+async def toggle_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    if not URL_SHORTENERS:
+        return await query.answer("No providers configured!")
+    
+    msg = f"""<blockquote>**Toggle URL Shortener Active Status:**</blockquote>
+
+**Available Providers:**
+"""
+    for key, provider in URL_SHORTENERS.items():
+        status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
+        msg += f"• `{key}` - {provider['name']} ({status})\n"
+    
+    msg += f"\n__Send the provider key to toggle or wait for 60 second timeout to be completed!__"
+    
+    await query.answer()
+    await query.message.edit_text(msg)
+    try:
+        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+        provider_key = res.text.strip()
+        
+        if provider_key not in URL_SHORTENERS:
+            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+        provider = URL_SHORTENERS[provider_key]
+        current_status = provider.get('active', False)
+        provider['active'] = not current_status
+        
+        status_text = "activated" if provider['active'] else "deactivated"
+        return await query.message.edit_text(f"**✅ Provider '{provider['name']}' {status_text} successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+    except ListenerTimeout:
+        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+
+
+@Client.on_callback_query(filters.regex("^rm_shortener$"))
+async def rm_shortener(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    if not URL_SHORTENERS:
+        return await query.answer("No providers configured!")
+    
+    msg = f"""<blockquote>**Remove URL Shortener Provider:**</blockquote>
+
+**Available Providers:**
+"""
+    for key, provider in URL_SHORTENERS.items():
+        status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
+        msg += f"• `{key}` - {provider['name']} ({status})\n"
+    
+    msg += f"\n__Send the provider key to remove or wait for 60 second timeout to be completed!__\n"
+    msg += f"**⚠️ Warning:** This action cannot be undone!"
+    
+    await query.answer()
+    await query.message.edit_text(msg)
+    try:
+        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+        provider_key = res.text.strip()
+        
+        if provider_key not in URL_SHORTENERS:
+            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+        provider_name = URL_SHORTENERS[provider_key]['name']
+        del URL_SHORTENERS[provider_key]
+        
+        return await query.message.edit_text(f"**✅ Provider '{provider_name}' removed successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        
+    except ListenerTimeout:
+        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+
+@Client.on_callback_query(filters.regex("^global_token_toggle$"))
+async def global_token_toggle(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    current_status = await client.mongodb.get_bot_config('token_verification_enabled', True)
+    new_status = not current_status
+    await client.mongodb.set_bot_config('token_verification_enabled', new_status)
+    await query.answer(f"System {'Enabled' if new_status else 'Disabled'}!")
+    return await url_shorteners(client, query)
+
+@Client.on_callback_query(filters.regex("^anti_bypass_settings$"))
+async def anti_bypass_settings(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    bypass_check_enabled = await client.mongodb.get_bot_config('bypass_check_enabled', True)
+    bypass_timer = await client.mongodb.get_bot_config('bypass_timer', 60)
+    
+    status = f"✅ {sc('Enabled')}" if bypass_check_enabled else f"❌ {sc('Disabled')}"
+    
+    msg = f"""<blockquote>**⚠️ {sc('Anti-Bypass System Configuration')}:**</blockquote>
+
+**{sc('System Status')}:** {status}
+**{sc('Minimum Wait Time')}:** `{bypass_timer} {sc('seconds')}`
+
+__{sc('This system prevents users from solving the shortener too quickly (skipping ads)')}.__
+"""
+    toggle_text = f"🔴 {sc('Disable')}" if bypass_check_enabled else f"🟢 {sc('Enable')}"
+    
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton(toggle_text, 'toggle_bypass_check'), InlineKeyboardButton(f'⏰ {sc("change timer")}', 'set_bypass_timer')],
+        [InlineKeyboardButton(f'◂ {sc("back")}', 'url_shorteners')]
+    ])
+    
+    await query.message.edit_text(msg, reply_markup=reply_markup)
+
+@Client.on_callback_query(filters.regex("^toggle_bypass_check$"))
+async def toggle_bypass_check(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    current = await client.mongodb.get_bot_config('bypass_check_enabled', True)
+    await client.mongodb.set_bot_config('bypass_check_enabled', not current)
+    await query.answer(f"{sc('Anti-Bypass System')} {'Disabled' if current else 'Enabled'}!")
+    return await anti_bypass_settings(client, query)
+
+@Client.on_callback_query(filters.regex("^set_bypass_timer$"))
+async def set_bypass_timer(client, query):
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
+    msg = f"""<blockquote>**{sc('change anti-bypass timer')}:**</blockquote>
+    
+__{sc('enter the minimum time (in seconds) a user must take to solve the shortener')}.__
+__{sc('default is 60 seconds')}.__
+
+__{sc('send the number or wait for timeout')}!__
+"""
+    await query.message.edit_text(msg)
+    try:
+        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+        if res.text.isdigit():
+            timer = int(res.text)
+            await client.mongodb.set_bot_config('bypass_timer', timer)
+            await query.message.edit_text(f"**{sc('timer updated to')} {timer} {sc('seconds')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
+        else:
+            await query.message.edit_text(f"**{sc('invalid number')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
+    except ListenerTimeout:
+        await query.message.edit_text(f"**{sc('timeout')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
