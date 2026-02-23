@@ -26,7 +26,9 @@ payment_gateway = PaymentGateway(credit_config)
 
 @Client.on_callback_query(filters.regex("^credit_system$"))
 async def credit_system_panel(client, query):
-    """Main credit system settings panel"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     stats = await enhanced_db.get_credit_statistics()
     
@@ -61,7 +63,9 @@ __{sc('use buttons below to manage credit system')}!__
 
 @Client.on_callback_query(filters.regex("^credit_manage_users$"))
 async def credit_manage_users(client, query):
-    """User credit management panel"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**{sc('user credit management')}:**</blockquote>
 
 {sc('choose an action')}:
@@ -81,7 +85,9 @@ async def credit_manage_users(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_add_user$"))
 async def credit_add_user(client, query):
-    """Add credits to user"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     try:
         await query.message.edit_text(
             f"**{sc('add credits to user')}**\n\n"
@@ -135,7 +141,9 @@ async def credit_add_user(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_set_user$"))
 async def credit_set_user(client, query):
-    """Set exact credit amount for user"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     try:
         await query.message.edit_text(
             f"**{sc('set exact credits')}**\n\n"
@@ -177,7 +185,9 @@ async def credit_set_user(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_remove_user$"))
 async def credit_remove_user(client, query):
-    """Remove all credits from user"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     try:
         await query.message.edit_text(
             f"**{sc('remove all credits')}**\n\n"
@@ -208,7 +218,9 @@ async def credit_remove_user(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_list_users$"))
 async def credit_list_users(client, query):
-    """List all users with credits"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     users = await enhanced_db.get_all_users_with_credits()
     
@@ -237,7 +249,9 @@ async def credit_list_users(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_check_user$"))
 async def credit_check_user(client, query):
-    """Check specific user's credits"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     try:
         await query.message.edit_text(
             f"**{sc('check user credits')}**\n\n"
@@ -282,7 +296,9 @@ async def credit_check_user(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_settings$"))
 async def credit_settings_panel(client, query):
-    """Credit system configuration panel"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     expiry_days = credit_config.get("expiry_days", 30)
     referral_reward = credit_config.get("referral_reward", 5)
     verification_reward = await client.mongodb.get_bot_config('verification_reward', 3)
@@ -310,7 +326,9 @@ __{sc('note')}: {sc('some settings are in setup.json')}__
 
 @Client.on_callback_query(filters.regex("^credit_set_verification$"))
 async def credit_set_verification(client, query):
-    """Set verification reward amount"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     msg = f"""<blockquote>**{sc('set verification reward')}:**</blockquote>
     
 __{sc('enter the amount of credits a user earns after solving the shortener')}.__
@@ -333,7 +351,9 @@ __{sc('send the number or wait for timeout')}!__
 
 @Client.on_callback_query(filters.regex("^credit_cleanup_expired$"))
 async def credit_cleanup_expired(client, query):
-    """Manually cleanup expired credits"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     count = await enhanced_db.cleanup_all_expired()
     
@@ -343,7 +363,9 @@ async def credit_cleanup_expired(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_payments$"))
 async def credit_payments_panel(client, query):
-    """Payment management panel"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     payment_method = credit_config.get("payment_method", "manual")
     packages = credit_config.get("packages", DEFAULT_PACKAGES)
     
@@ -372,7 +394,9 @@ async def credit_payments_panel(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_approve_payment$"))
 async def credit_approve_payment_handler(client, query):
-    """Approve manual payment"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     try:
         await query.message.edit_text(
             f"**{sc('approve payment')}**\n\n"
@@ -433,7 +457,9 @@ async def credit_approve_payment_handler(client, query):
 
 @Client.on_callback_query(filters.regex("^credit_referrals$"))
 async def credit_referrals_panel(client, query):
-    """Referral system management"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     referral_reward = credit_config.get("referral_reward", 5)
     
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
@@ -458,7 +484,9 @@ __{sc('users earn credits by inviting friends')}!__
 
 @Client.on_callback_query(filters.regex("^credit_stats$"))
 async def credit_stats_panel(client, query):
-    """Detailed credit statistics"""
+    if query.from_user.id not in client.admins:
+        await query.answer("Only Admins Can Access This", show_alert=True)
+        return
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     stats = await enhanced_db.get_credit_statistics()
     
