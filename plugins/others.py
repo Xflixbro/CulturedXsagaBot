@@ -113,11 +113,21 @@ async def about_callback(client: Client, query: CallbackQuery):
 @Client.on_callback_query(filters.regex('^channels_menu$'))
 async def channels_menu_callback(client: Client, query: CallbackQuery):
     """Channels submenu – no heading text, only buttons"""
-    await query.message.edit_text(
-        text="",  # Empty text, only buttons will show
-        reply_markup=channels_menu_buttons(),
-        parse_mode=enums.ParseMode.HTML
-    )
+    try:
+        # Use a single space to avoid empty text error
+        await query.message.edit_text(
+            text=" ",
+            reply_markup=channels_menu_buttons(),
+            parse_mode=enums.ParseMode.HTML
+        )
+    except Exception as e:
+        # If editing fails, try sending a new message
+        await query.message.delete()
+        await client.send_message(
+            chat_id=query.from_user.id,
+            text=" ",
+            reply_markup=channels_menu_buttons()
+        )
 
 @Client.on_callback_query(filters.regex('^credit_info$'))
 async def credit_info_callback(client: Client, query: CallbackQuery):
