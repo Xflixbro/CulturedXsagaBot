@@ -18,11 +18,12 @@ CHANNEL_ADULT = "http://t.me/adult_Saga"               # ADULT button – replac
 CREDIT_TEXT = """
 <b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
 
-➥ ᴏᴡɴᴇʀ : <a href='https://t.me/Xeonflixadmin'>xᴇᴏɴ</a>
-➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='https://t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
-➥ ᴇxᴛʀᴀ ꜰᴇᴀᴛᴜʀᴇꜱ : <a href='https://t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
+➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
+➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
+➥ ᴇxᴛʀᴀ ᴄᴏᴅᴇ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
+➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴄᴏᴅᴇx ʙᴏᴛ</a>
 ➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
-➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='https://t.me/+y6mFtiS5JQFkNThl'>ʜᴇʀᴇ</a>
+➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='https://youtu.be/uf8F97ONQbc?si=6icZPNIvFEf-bXeU'>ʜᴇʀᴇ</a>
 ➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ</b>
 """
 
