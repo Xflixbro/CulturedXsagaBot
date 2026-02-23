@@ -1,7 +1,7 @@
 # Made by @Awakeners_Bots
 # GitHub: https://github.com/Awakener_Bots
 
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
 from config import MSG_EFFECT
 from helper.font_converter import to_small_caps as sc
@@ -10,48 +10,38 @@ from helper.font_converter import to_small_caps as sc
 CHANNEL_MAIN = "https://t.me/YourMainChannel"          # Replace with your main channel URL
 CHANNEL_MOVIES = "http://t.me/Cineflix_Saga"
 CHANNEL_SERIES = "http://t.me/seriesflix_Saga"
-CHANNEL_ANIME = "http://t.me/anime_Saga"
-CHANNEL_DRAMA = "http://t.me/drama_Saga"
+CHANNEL_ANIMES = "http://t.me/anime_Saga"              # ANIMES button
+CHANNEL_ADULT = "http://t.me/adult_Saga"               # ADULT button – replace with actual link
 # ============================================================
 
-# Credit info text (as you requested)
+# Credit info text with HTML links – bold small caps
 CREDIT_TEXT = """
-⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
+<b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
 
-➥ ᴏᴡɴᴇʀ : xᴇᴏɴ
-➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : ʏᴀᴛᴏ
-➥ ᴇxᴛʀᴀ ꜰᴇᴀᴛᴜʀᴇꜱ : ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ
-➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : ᴛʜɪs ᴘᴇʀsᴏɴ
-➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : ʜᴇʀᴇ
-➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ
+➥ ᴏᴡɴᴇʀ : <a href='https://t.me/Xeonflixadmin'>xᴇᴏɴ</a>
+➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='https://t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
+➥ ᴇxᴛʀᴀ ꜰᴇᴀᴛᴜʀᴇꜱ : <a href='https://t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
+➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
+➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='https://t.me/+y6mFtiS5JQFkNThl'>ʜᴇʀᴇ</a>
+➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ</b>
 """
 
-# Disclaimer text (you can change this)
-DISCLAIMER_TEXT = (
-    "**Disclaimer:**\n\n"
-    "This bot is for educational purposes only. "
-    "All content shared is the responsibility of the user. "
-    "We do not host any files on our servers."
-)
+# Disclaimer text – exact copy with small caps, wrapped in bold
+DISCLAIMER_TEXT = """
+<b>ᴀʟʟ ᴛʜᴇ ꜰɪʟᴇꜱ ɪɴ ᴛʜɪꜱ ʙᴏᴛ ᴀʀᴇ ꜰʀᴇᴇʟʏ ᴀᴠᴀɪʟᴀʙʟᴇ ᴏɴ ᴛʜᴇ ɪɴᴛᴇʀɴᴇᴛ ᴏʀ ᴘᴏꜱᴛᴇᴅ ʙʏ ꜱᴏᴍᴇʙᴏᴅʏ ᴇʟꜱᴇ. ᴊᴜꜱᴛ ꜰᴏʀ ᴇᴀꜱʏ ꜱᴇᴀʀᴄʜɪɴɢ ᴛʜɪꜱ ʙᴏᴛ ɪꜱ ɪɴᴅᴇxɪɴɢ ꜰɪʟᴇꜱ ᴡʜɪᴄʜ ᴀʀᴇ ᴀʟʀᴇᴀᴅʏ ᴜᴘʟᴏᴀᴅᴇᴅ ᴏɴ ᴛᴇʟᴇɢʀᴀᴍ. ᴡᴇ ʀᴇꜱᴘᴇᴄᴛ ᴀʟʟ ᴛʜᴇ ᴄᴏᴘʏʀɪɢʜᴛ ʟᴀᴡꜱ ᴀɴᴅ ᴡᴏʀᴋꜱ ɪɴ ᴄᴏᴍᴘʟɪᴀɴᴄᴇ ᴡɪᴛʜ ᴅᴍᴄᴀ ᴀɴᴅ ᴇᴜᴄᴅ. ɪꜰ ᴀɴʏᴛʜɪɴɢ ɪꜱ ᴀɢᴀɪɴꜱᴛ ʟᴀᴡ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴍᴇ ꜱᴏ ᴛʜᴀᴛ ɪᴛ ᴄᴀɴ ʙᴇ ʀᴇᴍᴏᴠᴇᴅ ᴀꜱᴀᴘ. ɪᴛ ɪꜱ ꜰᴏʀʙɪʙʙᴇɴ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ, ꜱᴛʀᴇᴀᴍ, ʀᴇᴘʀᴏᴅᴜᴄᴇ, ꜱʜᴀʀᴇ ᴏʀ ᴄᴏɴꜱᴜᴍᴇ ᴄᴏɴᴛᴇɴᴛ ᴡɪᴛʜᴏᴜᴛ ᴇxᴘʟɪᴄɪᴛ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ꜰʀᴏᴍ ᴛʜᴇ ᴄᴏɴᴛᴇɴᴛ ᴄʀᴇᴀᴛᴏʀ ᴏʀ ʟᴇɢᴀʟ ᴄᴏᴘʏʀɪɢʜᴛ ʜᴏʟᴅᴇʀ. ɪꜰ ʏᴏᴜ ʙᴇʟɪᴇᴠᴇ ᴛʜɪꜱ ʙᴏᴛ ɪꜱ ᴠɪᴏʟᴀᴛɪɴɢ ʏᴏᴜʀ ɪɴᴛᴇʟʟᴇᴄᴛᴜᴀʟ ᴘʀᴏᴘᴇʀᴛʏ, ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ʀᴇꜱᴘᴇᴄᴛɪᴠᴇ ᴄʜᴀɴɴᴇʟꜱ ꜰᴏʀ ʀᴇᴍᴏᴠᴀʟ. ᴛʜᴇ ʙᴏᴛ ᴅᴏᴇꜱ ɴᴏᴛ ᴏᴡɴ ᴀɴʏ ᴏꜰ ᴛʜᴇꜱᴇ ᴄᴏɴᴛᴇɴᴛꜱ, ɪᴛ ᴏɴʟʏ ɪɴᴅᴇx ᴛʜᴇ ꜰɪʟᴇꜱ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ.</b>
+"""
 
 # ==================== BUTTON LAYOUT FUNCTIONS ====================
 
-def home_buttons(user_id=None):
-    """Page 1 buttons – adds Settings button if user is admin"""
-    buttons = [
+def home_buttons():
+    """Page 1 buttons (normal user)"""
+    return InlineKeyboardMarkup([
         [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
          InlineKeyboardButton("About", callback_data="about")],
         [InlineKeyboardButton("Premium", callback_data="premium_plans"),
          InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)],
         [InlineKeyboardButton("Next ➡️", callback_data="page_two")]
-    ]
-    # If admin, insert Settings button at the top
-    if user_id and user_id in client.admins:  # Note: client is not available here; we'll handle in start.py
-        # Actually we cannot access client here. Better to handle admin check in start.py and pass a flag.
-        # We'll modify to accept an `is_admin` boolean.
-        pass
-    # For simplicity, we'll handle admin check in start.py and call a separate function for admin keyboard.
-    return InlineKeyboardMarkup(buttons)
+    ])
 
 def home_buttons_admin():
     """Home page with Settings button for admins"""
@@ -76,14 +66,14 @@ def page_two_buttons():
     ])
 
 def channels_menu_buttons():
-    """Channels submenu"""
+    """Channels submenu – 3 rows of 2 buttons each (as requested)"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Movies", url=CHANNEL_MOVIES)],
-        [InlineKeyboardButton("Series", url=CHANNEL_SERIES)],
-        [InlineKeyboardButton("Anime", url=CHANNEL_ANIME)],
-        [InlineKeyboardButton("Drama", url=CHANNEL_DRAMA)],
-        [InlineKeyboardButton("Home", callback_data="home"),
-         InlineKeyboardButton("Close", callback_data="close")]
+        [InlineKeyboardButton("MOVIES", url=CHANNEL_MOVIES),
+         InlineKeyboardButton("SERIES", url=CHANNEL_SERIES)],
+        [InlineKeyboardButton("ANIMES", url=CHANNEL_ANIMES),
+         InlineKeyboardButton("ADULT", url=CHANNEL_ADULT)],
+        [InlineKeyboardButton("HOME", callback_data="home"),
+         InlineKeyboardButton("CLOSE", callback_data="close")]
     ])
 
 # ==================== CALLBACK HANDLERS ====================
@@ -101,7 +91,8 @@ async def home_callback(client: Client, query: CallbackQuery):
             first=query.from_user.first_name,
             mention=query.from_user.mention
         ),
-        reply_markup=markup
+        reply_markup=markup,
+        parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^page_two$'))
@@ -109,7 +100,8 @@ async def page_two_callback(client: Client, query: CallbackQuery):
     """Page 2"""
     await query.message.edit_text(
         text="**Page 2**",   # You can replace this text
-        reply_markup=page_two_buttons()
+        reply_markup=page_two_buttons(),
+        parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^channels_menu$'))
@@ -117,28 +109,31 @@ async def channels_menu_callback(client: Client, query: CallbackQuery):
     """Channels submenu"""
     await query.message.edit_text(
         text="**Our Channels**\n\nClick below to join:",
-        reply_markup=channels_menu_buttons()
+        reply_markup=channels_menu_buttons(),
+        parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^credit_info$'))
 async def credit_info_callback(client: Client, query: CallbackQuery):
-    """Credit info panel"""
+    """Credit info panel with HTML links – bold small caps"""
     await query.message.edit_text(
         text=CREDIT_TEXT,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Home", callback_data="home"),
              InlineKeyboardButton("Close", callback_data="close")]
-        ])
+        ]),
+        parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^disclaimer$'))
 async def disclaimer_callback(client: Client, query: CallbackQuery):
-    """Disclaimer panel"""
+    """Disclaimer panel – bold small caps"""
     await query.message.edit_text(
         text=DISCLAIMER_TEXT,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Back", callback_data="home")]
-        ])
+        ]),
+        parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^close$'))
@@ -161,7 +156,8 @@ async def about(client: Client, query: CallbackQuery):
             mention=query.from_user.mention,
             id=query.from_user.id
         ),
-        reply_markup=InlineKeyboardMarkup(buttons)
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode=enums.ParseMode.HTML
     )
     return
 
@@ -194,7 +190,8 @@ async def premium_plans_callback(client: Client, query: CallbackQuery):
     
     await query.message.edit_text(
         text=premium_text,
-        reply_markup=InlineKeyboardMarkup(buttons)
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode=enums.ParseMode.HTML
     )
     return
 
