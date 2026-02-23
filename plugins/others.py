@@ -112,9 +112,9 @@ async def about_callback(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex('^channels_menu$'))
 async def channels_menu_callback(client: Client, query: CallbackQuery):
-    """Channels submenu – no visible text, only buttons (uses zero‑width space)"""
+    """Channels submenu – no heading text, only buttons"""
     await query.message.edit_text(
-        text="\u200B",  # Zero-width space – invisible but not empty
+        text="",  # Empty text, only buttons will show
         reply_markup=channels_menu_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
