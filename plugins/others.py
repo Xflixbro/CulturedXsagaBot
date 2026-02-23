@@ -11,7 +11,7 @@ CHANNEL_MAIN = "https://t.me/YourMainChannel"          # Replace with your main 
 CHANNEL_MOVIES = "http://t.me/Cineflix_Saga"
 CHANNEL_SERIES = "http://t.me/seriesflix_Saga"
 CHANNEL_ANIMES = "http://t.me/anime_Saga"              # ANIMES button
-CHANNEL_ADULT = "http://t.me/culturedxsaga"               # ADULT button – replace with actual link
+CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replace with actual link
 # ============================================================
 
 # Credit info text with HTML links – bold small caps
@@ -20,7 +20,7 @@ CREDIT_TEXT = """
 
 ➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
 ➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
-➥ ᴇxᴛʀᴀ ᴄᴏᴅᴇ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
+➥ ᴇxᴛʀᴀ ꜰᴇᴀᴛᴜʀᴇꜱ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
 ➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴄᴏᴅᴇx ʙᴏᴛ</a>
 ➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
 ➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='https://youtu.be/uf8F97ONQbc?si=6icZPNIvFEf-bXeU'>ʜᴇʀᴇ</a>
@@ -40,7 +40,7 @@ def home_buttons():
         [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
-         InlineKeyboardButton("• ᴜᴘᴅᴀᴛᴇꜱ •", url=CHANNEL_MAIN)]
+         InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
     ])
 
 def home_buttons_admin():
@@ -50,14 +50,14 @@ def home_buttons_admin():
         [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
-         InlineKeyboardButton("• ᴜᴘᴅᴀᴛᴇꜱ •", url=CHANNEL_MAIN)]
+         InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
     ])
 
 def about_submenu_buttons():
     """Buttons shown inside About – Channels, Credit, Settings, Back"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("• ꜱᴜᴘᴘᴏʀᴛ •", callback_data="channels_menu"),
-         InlineKeyboardButton("• ᴄʀᴇᴀᴛᴏʀꜱ •", callback_data="credit_info")],
+        [InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟꜱ •", callback_data="channels_menu"),
+         InlineKeyboardButton("• ᴄʀᴇᴅɪᴛꜱ •", callback_data="credit_info")],
         [InlineKeyboardButton("• ꜱᴇᴛᴛɪɴɢꜱ •", callback_data="settings"),
          InlineKeyboardButton("• ʙᴀᴄᴋ •", callback_data="home")]
     ])
@@ -94,7 +94,7 @@ async def home_callback(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex('^about$'))
 async def about_callback(client: Client, query: CallbackQuery):
-    """About page – now shows Channels, Credit, and Settings submenu"""
+    """About page – now shows Channels, Credit, and Settings submenu (no extra text)"""
     about_text = client.messages.get('ABOUT', 'About this bot').format(
         owner_id=client.owner,
         bot_username=client.username,
@@ -105,16 +105,16 @@ async def about_callback(client: Client, query: CallbackQuery):
         id=query.from_user.id
     )
     await query.message.edit_text(
-        text=about_text + "\n\n**Select an option below:**",
+        text=about_text,  # Removed the extra line
         reply_markup=about_submenu_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
 
 @Client.on_callback_query(filters.regex('^channels_menu$'))
 async def channels_menu_callback(client: Client, query: CallbackQuery):
-    """Channels submenu"""
+    """Channels submenu – no heading text, only buttons"""
     await query.message.edit_text(
-        text="**Our Channels**\n\nClick below to join:",
+        text="",  # Empty text, only buttons will show
         reply_markup=channels_menu_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
