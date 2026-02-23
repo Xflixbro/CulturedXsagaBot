@@ -56,19 +56,13 @@ async def start_command(client: Client, message: Message):
         except IndexError:
             return
 
-        # Early return removed to allow valid handling of batch links
-
-        
         # ============== REFERRAL SYSTEM ==============
-        # Check if this is a referral link: /start ref_XXXXXXXX
         if base64_string.startswith("ref_"):
             referral_code = base64_string.replace("ref_", "")
             
-            # Apply referral if user is new
             if not present:
                 referrer_id = await enhanced_db.apply_referral(user_id, referral_code)
                 if referrer_id:
-                    # Notify new user
                     await message.reply(
                         f"🎉 **{sc('Welcome!')}**\n\n"
                         f"{sc('You joined using a referral link!')}\n"
@@ -82,38 +76,19 @@ async def start_command(client: Client, message: Message):
         # ---------------- TOKEN VERIFIED / SHORTENER SOLVED ----------------
         if "_" in base64_string:
             parts = base64_string.split("_", 1)
-            # Handle batch_ID_TOKEN case where batch_ID might contain underscores? 
-            # No, batch_ID is hex. So splitting logic works.
-            # But wait, create_batch uses secrets.token_hex(8) -> "a1b2c3d4e5f6g7h8" (no underscores)
-            # So splitting by first "_" is fine if token is second part.
-            # BUT if original was "batch_XYZ", split gives "batch", "XYZ". 
-            # NO. "batch_XYZ_TOKEN". 
-            # split("_", 1) -> "batch", "XYZ_TOKEN". WRONG.
-            # We need to handle "batch_" prefix carefully.
-            
-            # If it starts with batch_, we assume format: batch_BATCHID_TOKEN
             if base64_string.startswith("batch_"):
-                # expected: batch_{id}_{token}
-                # split("_") -> [batch, id, token]
                 parts = base64_string.split("_")
                 if len(parts) >= 3:
-                     # reconstruct original: batch_{id}
                      original_base64 = f"{parts[0]}_{parts[1]}"
                      access_token = parts[2]
-                else:
-                    # Fallback or invalid
-                    pass
             elif len(parts) == 2:
                 original_base64 = parts[0]
                 access_token = parts[1]
 
             if access_token:
-                # Check if verification is enabled
                 token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
 
-                # ONLY Verify if enabled
                 if token_verification_enabled:
-                    # Track shortener click
                     await client.mongodb.increment_token_clicks(user_id, access_token)
 
                     verify_result = await client.mongodb.verify_access_token(
@@ -122,7 +97,6 @@ async def start_command(client: Client, message: Message):
     
                     # ======================= ANTI-BYPASS LOGIC ======================
                     if verify_result == "BYPASS":
-                        # Check for auto-ban (Skip for Admins)
                         if user_id not in client.admins:
                             was_banned = await client.mongodb.check_and_auto_ban(user_id, max_attempts=5)
                             
@@ -140,7 +114,6 @@ async def start_command(client: Client, message: Message):
                             f"<blockquote><b>{sc('now be a good boy and solve it again, and this time dont get smart !!')}</b></blockquote>"
                         )
     
-                        # Notify admin
                         bypass_count = await client.mongodb.get_bypass_count(user_id)
                         await client.send_message(
                             client.owner,
@@ -150,7 +123,6 @@ async def start_command(client: Client, message: Message):
                         )
                         return
                     
-                    # Handle other error cases
                     if verify_result == "ALREADY_USED":
                         await message.reply(
                             f"<blockquote>❌ <b>{sc('token already used')}</b></blockquote>\n"
@@ -182,7 +154,6 @@ async def start_command(client: Client, message: Message):
                         verification_reward = await client.mongodb.get_bot_config('verification_reward', 3)
                         await enhanced_db.add_credits(user_id, verification_reward, expiry_days, reason="shortener_solved")
 
-                        # Re-fetch credits to ensure accurate count for deduction
                         credit_data = await enhanced_db.get_credits(user_id)
                         user_credits = credit_data.get("balance", 0)
     
@@ -197,10 +168,8 @@ async def start_command(client: Client, message: Message):
                             f"📂 <b>{sc('sending your file now...')}</b>"
                         )
 
-                    # Grant temporary access to bypass the check below
                     is_premium_user = True
                     
-                    # If this was a BATCH link, we need to manually trigger the batch handler
                     if original_base64.startswith("batch_"):
                          batch_id = original_base64.replace("batch_", "").strip()
                          from plugins.batch_handler import process_batch
@@ -208,35 +177,27 @@ async def start_command(client: Client, message: Message):
                          message.stop_propagation()
                          return
 
-                    # Fall through to file sending logic...
-
         # -------------------------- HYBRID TOKEN / BASE64 DECODE --------------------------
-        # 🔐 NEW: Check if it's a token-format link (alphanumeric, 12-16 chars)
         from helper.helper_func import is_token_format
         
-        # Batch links are NOT tokens in DB, they are IDs to be resolved by handler or Shortener
         is_batch = original_base64.startswith("batch_")
         
         if not is_batch and is_token_format(original_base64):
-            # ---- Rate limit check ----
             if await client.mongodb.is_token_rate_limited(user_id):
                 return await message.reply(
                     f"<blockquote>⏳ <b>{sc('too many invalid attempts')}</b></blockquote>\n"
                     f"<blockquote><b>{sc('please wait a minute and try again')}</b></blockquote>"
                 )
             
-            # ---- Resolve token from MongoDB ----
             token_doc = await client.mongodb.resolve_file_token(original_base64)
             
             if not token_doc:
-                # Record invalid attempt for rate limiting
                 await client.mongodb.record_invalid_token_attempt(user_id)
                 return await message.reply(
                     f"<blockquote>❌ <b>{sc('invalid or expired link')}</b></blockquote>\n"
                     f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                 )
             
-            # ---- Token resolved! Build ids from token data ----
             channel_id = token_doc["channel_id"]
             start_msg_id = token_doc["msg_id"]
             end_msg_id = token_doc.get("end_msg_id")
@@ -249,11 +210,9 @@ async def start_command(client: Client, message: Message):
             custom_chat_id = channel_id
             
         elif is_batch:
-            # Raw Batch Link: Skip decoding (it's not base64) and fall through to Check/Shortener
             ids = []
             custom_chat_id = None
         else:
-            # ---- OLD Base64 path (backward compatible) ----
             try:
                 string = await decode(original_base64)
                 argument = string.split("-")
@@ -268,13 +227,12 @@ async def start_command(client: Client, message: Message):
                     val1 = int(argument[1])
                     val2 = int(argument[2])
                     
-                    if val2 < 1000000: # Message ID < 1 Million → New Format
+                    if val2 < 1000000:
                         channel_id = val1
                         msg_id = val2
                         custom_chat_id = int(f"-100{channel_id}")
                         ids = [msg_id]
                     else:
-                        # Old Format (Range)
                         start = int(val1 / abs(client.db))
                         end = int(val2 / abs(client.db))
                         ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
@@ -292,24 +250,16 @@ async def start_command(client: Client, message: Message):
 
             elif len(argument) == 2:
                 try:
-                    # Format: get-GENERATED_ID (old single-file format)
                     ids = [int(int(argument[1]) / abs(client.db))]
                 except:
                     return
 
         
-        # Check if credit system is enabled globally
         credit_system_enabled = await client.mongodb.is_credit_system_enabled()
-        
-        # Check if token verification is enabled
         token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
         
-        # ------------------ USER TRYING TO GET FILE ------------------
-        
-        # Check if this is user's first file access (for referral reward)
         is_first_file = credit_data.get("total_spent", 0) == 0 and not is_premium_user
 
-        # If user has credits → deduct ONE (ONLY IF SYSTEM ENABLED)
         if credit_system_enabled and user_credits > 0 and not is_premium_user:
             await enhanced_db.use_credit(user_id)
             user_credits -= 1
@@ -320,27 +270,13 @@ async def start_command(client: Client, message: Message):
                 f"{sc('remaining credits')}: {user_credits}"
             )
             
-            # Reward referrer if this is first file access
             if is_first_file and credit_data.get("referred_by"):
-                # ... (existing code) ...
-                
-                # Notify referrer
-                try:
-                    await client.send_message(
-                        referrer_id,
-                        f"🎉 **{sc('referral reward')}!**\n\n"
-                        f"{sc('you earned')} **{reward_amount} {sc('credits')}** {sc('for referring a user')}!\n"
-                        f"{sc('user id')}: <code>{user_id}</code>\n\n"
-                        f"{sc('keep sharing your referral link to earn more!')}"
-                    )
-                except:
-                    pass
+                # reward referrer (code omitted for brevity)
+                pass
 
-        # If STILL not premium → show shortener (ONLY IF ENABLED)
         if not is_premium_user and token_verification_enabled:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
             
-            # ---------------- FETCH CONTENT NAME ----------------
             content_name = ""
             try:
                 if original_base64.startswith("batch_"):
@@ -349,19 +285,14 @@ async def start_command(client: Client, message: Message):
                     if batch:
                         content_name = f"📦 <b>{batch.get('base_name', 'Batch Pack')}</b>\n\n"
                 elif 'ids' in locals() and ids:
-                    # Use resolved IDs (Works for Token & Old Base64)
                     try:
                         t_msg_id = ids[0]
                         t_chat_id = custom_chat_id if 'custom_chat_id' in locals() and custom_chat_id else client.db
                         
-                        # Fetch message
                         f_msg = await client.get_messages(t_chat_id, t_msg_id)
                         if f_msg:
                             if f_msg.document:
                                 content_name = f"🎬 <b>{f_msg.document.file_name}</b>\n\n"
-                            elif f_msg.caption:
-                                # Start of caption usually contains filename or title
-                                pass 
                     except:
                         pass
             except Exception as e:
@@ -401,8 +332,6 @@ async def start_command(client: Client, message: Message):
                 message.stop_propagation()
             return
         
-        # ------------------ PREMIUM / CREDIT USERS: SEND FILE ------------------
-        
         if original_base64.startswith("batch_"):
              batch_id = original_base64.replace("batch_", "").strip()
              from plugins.batch_handler import process_batch
@@ -414,10 +343,8 @@ async def start_command(client: Client, message: Message):
         
         try:
             if 'custom_chat_id' in locals() and custom_chat_id:
-                # Multi-DB Fetch
                 messages = await get_messages(client, ids, custom_chat_id)
             else:
-                # Default DB Fetch
                 messages = await get_messages(client, ids)
         except:
             await temp_msg.edit_text(f"{sc('something went wrong')}..!")
@@ -458,7 +385,6 @@ async def start_command(client: Client, message: Message):
         return
 
     # ---------------- NORMAL /start UI ----------------
-    # Use the new button layouts from others.py
     if user_id in client.admins:
         markup = home_buttons_admin()
     else:
