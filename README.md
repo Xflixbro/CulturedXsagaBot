@@ -79,6 +79,8 @@ ADMINS = [123456789]
 PORT = 8080
 WEBHOOK = False
 ```
+## Shortner tutorial 
+shortxlinks|Shortxlinks|https://shortxlinks.com/api?api={api}&url={url}&format=text|d5911095597018fad72bf9ad1df544163b1520db|text
 
 ## 🚀 Installation
 
