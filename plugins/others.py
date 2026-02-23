@@ -11,7 +11,7 @@ CHANNEL_MAIN = "https://t.me/YourMainChannel"          # Replace with your main 
 CHANNEL_MOVIES = "http://t.me/Cineflix_Saga"
 CHANNEL_SERIES = "http://t.me/seriesflix_Saga"
 CHANNEL_ANIMES = "http://t.me/anime_Saga"              # ANIMES button
-CHANNEL_ADULT = "http://t.me/adult_Saga"               # ADULT button – replace with actual link
+CHANNEL_ADULT = "http://t.me/culturedxsaga"               # ADULT button – replace with actual link
 # ============================================================
 
 # Credit info text with HTML links – bold small caps
@@ -37,40 +37,40 @@ DISCLAIMER_TEXT = """
 def home_buttons():
     """Home page buttons (normal user) – no Next button"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
-         InlineKeyboardButton("About", callback_data="about")],
-        [InlineKeyboardButton("Premium", callback_data="premium_plans"),
-         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)]
+        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
+         InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
+        [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
+         InlineKeyboardButton("• ᴜᴘᴅᴀᴛᴇꜱ •", url=CHANNEL_MAIN)]
     ])
 
 def home_buttons_admin():
     """Home page with Settings button for admins – no Next button"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⌜ꜱᴇᴛᴛɪɴɢꜱ⌟", callback_data="settings")],
-        [InlineKeyboardButton("Disclaimer", callback_data="disclaimer"),
-         InlineKeyboardButton("About", callback_data="about")],
-        [InlineKeyboardButton("Premium", callback_data="premium_plans"),
-         InlineKeyboardButton("Channel URL", url=CHANNEL_MAIN)]
+        [InlineKeyboardButton("• ꜱᴇᴛᴛɪɴɢꜱ •", callback_data="settings")],
+        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
+         InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
+        [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
+         InlineKeyboardButton("• ᴜᴘᴅᴀᴛᴇꜱ •", url=CHANNEL_MAIN)]
     ])
 
 def about_submenu_buttons():
     """Buttons shown inside About – Channels, Credit, Settings, Back"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Channels", callback_data="channels_menu"),
-         InlineKeyboardButton("Credit", callback_data="credit_info")],
-        [InlineKeyboardButton("Settings", callback_data="settings"),
-         InlineKeyboardButton("🔙 Back", callback_data="home")]
+        [InlineKeyboardButton("• ꜱᴜᴘᴘᴏʀᴛ •", callback_data="channels_menu"),
+         InlineKeyboardButton("• ᴄʀᴇᴀᴛᴏʀꜱ •", callback_data="credit_info")],
+        [InlineKeyboardButton("• ꜱᴇᴛᴛɪɴɢꜱ •", callback_data="settings"),
+         InlineKeyboardButton("• ʙᴀᴄᴋ •", callback_data="home")]
     ])
 
 def channels_menu_buttons():
     """Channels submenu – 3 rows of 2 buttons each (as requested)"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("MOVIES", url=CHANNEL_MOVIES),
-         InlineKeyboardButton("SERIES", url=CHANNEL_SERIES)],
-        [InlineKeyboardButton("ANIMES", url=CHANNEL_ANIMES),
-         InlineKeyboardButton("ADULT", url=CHANNEL_ADULT)],
-        [InlineKeyboardButton("HOME", callback_data="home"),
-         InlineKeyboardButton("CLOSE", callback_data="close")]
+        [InlineKeyboardButton("• ᴍᴏᴠɪᴇꜱ •", url=CHANNEL_MOVIES),
+         InlineKeyboardButton("• ꜱᴇʀɪᴇꜱ •", url=CHANNEL_SERIES)],
+        [InlineKeyboardButton("• ᴀɴɪᴍᴇꜱ •", url=CHANNEL_ANIMES),
+         InlineKeyboardButton("• ᴀᴅᴜʟᴛ •", url=CHANNEL_ADULT)],
+        [InlineKeyboardButton("• ʜᴏᴍᴇ •", callback_data="home"),
+         InlineKeyboardButton("• ᴄʟᴏꜱᴇ •", callback_data="close")]
     ])
 
 # ==================== CALLBACK HANDLERS ====================
