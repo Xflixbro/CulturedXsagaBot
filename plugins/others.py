@@ -97,9 +97,9 @@ async def home_callback(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex('^page_two$'))
 async def page_two_callback(client: Client, query: CallbackQuery):
-    """Page 2"""
+    """Page 2 – no title, just buttons"""
     await query.message.edit_text(
-        text="**Page 2**",   # You can replace this text
+        text="**More Options**",   # Simple heading instead of "Page 2"
         reply_markup=page_two_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
