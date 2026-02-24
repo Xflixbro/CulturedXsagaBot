@@ -32,7 +32,8 @@ async def batch(client: Client, message: Message):
                 await first_response.answer(sc("wrong button"), show_alert=True)
                 continue
             
-        f_msg_id = await get_message_id(client, first_response)
+        # UPDATED: Unpack tuple (msg_id, channel_id)
+        f_msg_id, f_channel_id = await get_message_id(client, first_response)
         if f_msg_id:
             await ask_msg.delete() 
             break
@@ -58,7 +59,8 @@ async def batch(client: Client, message: Message):
                 await second_response.answer(sc("wrong button"), show_alert=True)
                 continue
 
-        s_msg_id = await get_message_id(client, second_response)
+        # UPDATED: Unpack tuple (msg_id, channel_id)
+        s_msg_id, s_channel_id = await get_message_id(client, second_response)
         if s_msg_id:
             await ask_msg.delete()
             break
@@ -73,7 +75,8 @@ async def batch(client: Client, message: Message):
     
     # Fetch first message to get a name
     try:
-        first_msg = await client.get_messages(client.db_channel.id, f_msg_id)
+        # Use f_channel_id to fetch message from the correct channel
+        first_msg = await client.get_messages(f_channel_id, f_msg_id)
         batch_name = ""
         if first_msg:
              if first_msg.document:
@@ -90,12 +93,14 @@ async def batch(client: Client, message: Message):
         info_text = ""
 
     # Hybrid Token for Batch Range
+    # UPDATED: Use f_channel_id instead of client.db_channel.id
     try:
-        token = await client.mongodb.create_file_token(client.db_channel.id, f_msg_id, end_msg_id=s_msg_id)
+        token = await client.mongodb.create_file_token(f_channel_id, f_msg_id, end_msg_id=s_msg_id)
         link = f"https://t.me/{client.username}?start={token}"
     except Exception as e:
         print(f"Token creation failed for batch: {e}")
-        string = f"get-{f_msg_id * abs(client.db_channel.id)}-{s_msg_id * abs(client.db_channel.id)}"
+        # UPDATED: Use f_channel_id for the math
+        string = f"get-{f_msg_id * abs(f_channel_id)}-{s_msg_id * abs(f_channel_id)}"
         base64_string = await encode(string)
         link = f"https://t.me/{client.username}?start={base64_string}"
         
@@ -127,7 +132,8 @@ async def link_generator(client: Client, message: Message):
                 await channel_message.answer(sc("wrong button"), show_alert=True)
                 continue
             
-        msg_id = await get_message_id(client, channel_message)
+        # UPDATED: Unpack tuple (msg_id, channel_id)
+        msg_id, channel_id = await get_message_id(client, channel_message)
         if msg_id:
             await ask_msg.delete() 
             break
@@ -135,7 +141,7 @@ async def link_generator(client: Client, message: Message):
             await channel_message.reply(f"❌ {sc('error')}\n\n{sc('this forwarded post is not from my db channel or this link is not taken from db channel')}", quote = True)
             continue
 
-    channel_id = getattr(client, 'db_channel_id', client.db)
+    # UPDATED: We now have the correct channel_id from the message, no need to fallback to main db
     
     # NEW: Fetch content name
     file_name = ""
@@ -184,7 +190,8 @@ async def single_file_gen_handler(client: Client, message: Message):
         channel_id = main_channel
         msg_id = None
         
-        if message.forward_origin and message.forward_origin.type == "channel":
+        # Check Pyrogram v2 forward_origin first
+        if hasattr(message, 'forward_origin') and message.forward_origin and message.forward_origin.type == "channel":
             forwarded_channel_id = message.forward_origin.chat.id
             # Check if it's from any of our DB channels
             extra_channels = await client.mongodb.get_db_channels()
@@ -196,6 +203,15 @@ async def single_file_gen_handler(client: Client, message: Message):
             else:
                  # Copy
                  pass
+        
+        # Fallback for Pyrogram v1 or other cases if needed, but forward_origin covers v2
+        elif message.forward_from_chat:
+             forwarded_channel_id = message.forward_from_chat.id
+             extra_channels = await client.mongodb.get_db_channels()
+             all_db_channels = [main_channel] + extra_channels
+             if forwarded_channel_id in all_db_channels:
+                 msg_id = message.forward_from_message_id
+                 channel_id = forwarded_channel_id
         
         if not msg_id:
              # Not from our DB or clean upload, copy to selected channel
