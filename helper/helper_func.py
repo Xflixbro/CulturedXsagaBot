@@ -101,34 +101,46 @@ async def get_message_id(client, message):
     # Combine all valid DB channels
     all_db_channels = [main_channel] + extra_channels
 
+    # Support for Pyrogram v2 (forward_origin)
+    if hasattr(message, 'forward_origin') and message.forward_origin:
+        if message.forward_origin.type == "channel":
+            fwd_chat_id = message.forward_origin.chat.id
+            fwd_msg_id = message.forward_origin.message_id
+            if fwd_chat_id in all_db_channels:
+                return fwd_msg_id, fwd_chat_id
+            else:
+                return 0, None
+
+    # Support for Pyrogram v1 (forward_from_chat)
     if message.forward_from_chat:
         if message.forward_from_chat.id in all_db_channels:
-            return message.forward_from_message_id
+            # Return Tuple: (Message ID, Channel ID)
+            return message.forward_from_message_id, message.forward_from_chat.id
         else:
-            return 0
+            return 0, None
     elif message.forward_sender_name:
-        return 0
+        return 0, None
     elif message.text:
         pattern = r"https://t.me/(?:c/)?(.*)/(\d+)"
         matches = re.match(pattern, message.text)
         if not matches:
-            return 0
+            return 0, None
         channel_identifier = matches.group(1)
         msg_id = int(matches.group(2))
         if channel_identifier.isdigit():
             # Private channel link (t.me/c/123/456)
             channel_id = int(f"-100{channel_identifier}")
             if channel_id in all_db_channels:
-                return msg_id
+                return msg_id, channel_id
         else:
             # Public channel link (t.me/username/123)
             # Check if it matches the main channel's username
             if hasattr(client, 'db_channel') and client.db_channel.username and channel_identifier == client.db_channel.username:
-                return msg_id
+                return msg_id, client.db_channel.id
             # Optionally, you could store usernames for extra channels and check them here
     else:
-        return 0
-    return 0
+        return 0, None
+    return 0, None
 
 def get_readable_time(seconds: int) -> str:
     count = 0
@@ -155,9 +167,6 @@ async def is_bot_admin(client, channel_id):
     try:
         bot = await client.get_chat_member(channel_id, "me")
         if bot.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
-            # Check for specific rights if needed, but for DB channel, just being admin is usually enough to read/copy.
-            # However, to be safe, we might want rights to post messages if we ever use it for that.
-            # For now, basic admin check is fine for "reading" files.
             return True, None
         return False, "Bot is not an admin in the channel."
     except UserNotParticipant:
