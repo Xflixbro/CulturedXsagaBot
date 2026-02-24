@@ -112,9 +112,9 @@ async def about_callback(client: Client, query: CallbackQuery):
 
 @Client.on_callback_query(filters.regex('^channels_menu$'))
 async def channels_menu_callback(client: Client, query: CallbackQuery):
-    """Channels submenu – no heading text, only buttons"""
+    """Channels submenu – Updated with text to prevent API error"""
     await query.message.edit_text(
-        text="",  # Empty text, only buttons will show
+        text="<b>ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟs:</b>",  # Text cannot be empty
         reply_markup=channels_menu_buttons(),
         parse_mode=enums.ParseMode.HTML
     )
