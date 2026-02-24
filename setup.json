@@ -1,14 +1,14 @@
 [
     {
         "session": "ses1",
-        "token": "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA",
-        "api_id": "27050683",
-        "api_hash": "013a5c0b1f2c320b98236cf212835d59",
+        "token": "8322793994:AAGiFwNq_MksA6K77RBSZ4bEpZSOT2IhFPA",
+        "api_id": "15529802",
+        "api_hash": "92bcb6aa798a6f1feadbc917fccb54d3",
         "workers": 8,
-        "db_uri": "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-        "db_name": "CORNXVILLA",
+        "db_uri": "mongodb+srv://CineXeonFile:CineXeonFile@cluster0.dokar6b.mongodb.net/?appName=Cluster0",
+        "db_name": "MovieSeries",
         "fsubs": [],
-        "db": -1002162795137,
+        "db": -1003536384063,
         "auto_del": 300,
         "messages": {
             "START": "<b>ʜᴇʟʟᴏ {first}\n\nɪ ᴀᴍ ғɪʟᴇ sᴛᴏʀᴇ ʙᴏᴛ, ɪ ᴄᴀɴ sᴛᴏʀᴇ ᴘʀɪᴠᴀᴛᴇ ғɪʟᴇs ɪɴ sᴘᴇᴄɪғɪᴇᴅ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴏᴛʜᴇʀ ᴜsᴇʀs ᴄᴀɴ ᴀᴄᴄᴇss ɪᴛ ғʀᴏᴍ sᴘᴇᴄɪᴀʟ ʟɪɴᴋ.</b>",
@@ -20,7 +20,7 @@
         },
         "admins": [
             123456789,
-            987654321
+            821215952
         ],
         "disable_btn": true,
         "protect": false,
@@ -28,7 +28,7 @@
             "expiry_days": 30,
             "referral_reward": 5,
             "payment_method": "manual",
-            "upi_id": "GPGpapaji@Fam",
+            "upi_id": "NOTAVAILABLE",
             "phone": "XXXXXXXXXX",
             "packages": [
                 {
