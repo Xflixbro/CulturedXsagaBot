@@ -314,16 +314,16 @@ async def start_command(client: Client, message: Message):
             )
             
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"⌜{sc('get files')}⌟", url=shortened_url)],
+                [InlineKeyboardButton(f"⌜{sc('ᴏᴘᴇɴ ʟɪɴᴋ')}⌟", url=shortened_url)],
                 [
-                    InlineKeyboardButton(f"「{sc('tutorial')}」", url="https://t.me/+rKJmAabX6MxmMjg9"),
-                    InlineKeyboardButton(f"「{sc('premium')}」", url="https://t.me/Cultured_Support_bot")
+                    InlineKeyboardButton(f"「{sc('ᴛᴜᴛᴏʀɪᴀʟ')}」", url="https://t.me/+rKJmAabX6MxmMjg9"),
+                    InlineKeyboardButton(f"「{sc('ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ')}」", url="https://t.me/PremiumXeon/11")
                 ]
             ])
             
             await client.send_photo(
                 chat_id=message.chat.id,
-                photo="https://i.ibb.co/FtnfS25/photo-2025-10-31-18-43-10-7567458335163678756.jpg",
+                photo="https://files.catbox.moe/bktufd.jpg",
                 caption=premium_text,
                 reply_markup=buttons,
                 protect_content=True
