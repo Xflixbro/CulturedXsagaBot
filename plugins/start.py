@@ -213,6 +213,17 @@ async def start_command(client: Client, message: Message):
                 ids = [start_msg_id]
                 
             custom_chat_id = channel_id
+
+            # --- NEW: Verify bot can access the channel ---
+            try:
+                await client.get_chat(custom_chat_id)
+            except Exception as e:
+                return await message.reply(
+                    f"❌ **Bot cannot access the channel where this file is stored.**\n"
+                    f"Make sure I am still an admin in that channel.\n"
+                    f"Error: {e}"
+                )
+            # ---------------------------------------------
             
         elif not is_batch:
             # ----- OLD BASE64 PATH -----
