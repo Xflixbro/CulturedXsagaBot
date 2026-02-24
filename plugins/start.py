@@ -182,7 +182,12 @@ async def start_command(client: Client, message: Message):
         
         is_batch = original_base64.startswith("batch_")
         
+        # Initialize variables
+        ids = []
+        custom_chat_id = None
+        
         if not is_batch and is_token_format(original_base64):
+            # ----- HYBRID TOKEN -----
             if await client.mongodb.is_token_rate_limited(user_id):
                 return await message.reply(
                     f"<blockquote>⏳ <b>{sc('too many invalid attempts')}</b></blockquote>\n"
@@ -203,57 +208,46 @@ async def start_command(client: Client, message: Message):
             end_msg_id = token_doc.get("end_msg_id")
             
             if end_msg_id:
-                ids = range(start_msg_id, end_msg_id + 1)
+                ids = list(range(start_msg_id, end_msg_id + 1))
             else:
                 ids = [start_msg_id]
                 
             custom_chat_id = channel_id
             
-        elif is_batch:
-            ids = []
-            custom_chat_id = None
-        else:
+        elif not is_batch:
+            # ----- OLD BASE64 PATH -----
             try:
                 string = await decode(original_base64)
                 argument = string.split("-")
             except Exception:
                 return
         
-            ids = []
-            custom_chat_id = None
-        
             if len(argument) == 3:
+                # New format: get-CHANNEL_ID-MSG_ID (channel_id without -100)
                 try:
-                    val1 = int(argument[1])
-                    val2 = int(argument[2])
-                    
-                    if val2 < 1000000:
-                        channel_id = val1
-                        msg_id = val2
-                        custom_chat_id = int(f"-100{channel_id}")
-                        ids = [msg_id]
-                    else:
-                        start = int(val1 / abs(client.db))
-                        end = int(val2 / abs(client.db))
-                        ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
+                    channel_id_part = int(argument[1])
+                    msg_id_part = int(argument[2])
+                    custom_chat_id = int(f"-100{channel_id_part}")
+                    ids = [msg_id_part]
                 except:
-                    pass
-                try:
-                    arg1 = int(argument[1])
-                    arg2 = int(argument[2])
-                    full_chat_id = int(f"-100{arg1}")
-                    message_id = arg2
-                    ids = [message_id]
-                    custom_chat_id = full_chat_id
-                except:
-                    pass
-
+                    # Old range format: get-ID1-ID2
+                    try:
+                        start = int(int(argument[1]) / abs(client.db))
+                        end = int(int(argument[2]) / abs(client.db))
+                        ids = list(range(start, end + 1)) if start <= end else list(range(start, end - 1, -1))
+                    except:
+                        return
             elif len(argument) == 2:
+                # Old single file format: get-GENERATED_ID
                 try:
-                    ids = [int(int(argument[1]) / abs(client.db))]
+                    msg_id = int(int(argument[1]) / abs(client.db))
+                    ids = [msg_id]
                 except:
                     return
+            else:
+                return
 
+        # ------------------ USER TRYING TO GET FILE ------------------
         
         credit_system_enabled = await client.mongodb.is_credit_system_enabled()
         token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
@@ -274,6 +268,7 @@ async def start_command(client: Client, message: Message):
                 # reward referrer (code omitted for brevity)
                 pass
 
+        # If not premium and token verification enabled, show shortener
         if not is_premium_user and token_verification_enabled:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
             
@@ -284,10 +279,10 @@ async def start_command(client: Client, message: Message):
                     batch = await client.mongodb.get_batch(b_id)
                     if batch:
                         content_name = f"📦 <b>{batch.get('base_name', 'Batch Pack')}</b>\n\n"
-                elif 'ids' in locals() and ids:
+                elif ids:
                     try:
                         t_msg_id = ids[0]
-                        t_chat_id = custom_chat_id if 'custom_chat_id' in locals() and custom_chat_id else client.db
+                        t_chat_id = custom_chat_id if custom_chat_id else client.db
                         
                         f_msg = await client.get_messages(t_chat_id, t_msg_id)
                         if f_msg:
@@ -332,6 +327,7 @@ async def start_command(client: Client, message: Message):
                 message.stop_propagation()
             return
         
+        # Handle batch links after verification (if user is premium or used credits)
         if original_base64.startswith("batch_"):
              batch_id = original_base64.replace("batch_", "").strip()
              from plugins.batch_handler import process_batch
@@ -339,10 +335,11 @@ async def start_command(client: Client, message: Message):
              message.stop_propagation()
              return
 
+        # ------------------ FETCH AND SEND FILES ------------------
         temp_msg = await message.reply(f"{sc('wait a sec')}..")
         
         try:
-            if 'custom_chat_id' in locals() and custom_chat_id:
+            if custom_chat_id:
                 messages = await get_messages(client, ids, custom_chat_id)
             else:
                 messages = await get_messages(client, ids)
@@ -354,10 +351,19 @@ async def start_command(client: Client, message: Message):
         # Filter out None messages (invalid/deleted)
         valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
         if not valid_messages:
-            await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
-            return
-        else:
-            await temp_msg.delete()
+            # Fallback: try main DB channel in case it's an old link
+            if custom_chat_id and custom_chat_id != client.db:
+                client.LOGGER(__name__, client.name).warning(f"No messages found in {custom_chat_id}, trying main DB")
+                try:
+                    messages = await get_messages(client, ids, client.db)
+                    valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
+                except Exception as e:
+                    client.LOGGER(__name__, client.name).warning(f"Fallback fetch error: {e}")
+            
+            if not valid_messages:
+                await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
+                return
+        await temp_msg.delete()
 
         yugen_msgs = []
 
