@@ -171,58 +171,48 @@ async def single_file_gen_handler(client: Client, message: Message):
     if message.from_user.id not in client.admins:
         return
 
-    # Skip if message is a command (handled by other handlers)
-    if message.text and message.text.startswith("/"):
-        return
-
     try:
         msg = await message.reply(f"🔄 {sc('processing')}...", quote=True)
         
         main_channel = getattr(client, 'db_channel_id', client.db)
-        
-        # If message is forwarded from DB Channel, use existing ID
         channel_id = main_channel
         msg_id = None
         
-        if message.forward_origin and message.forward_origin.type == "channel":
-            forwarded_channel_id = message.forward_origin.chat.id
-            # Check if it's from any of our DB channels
+        # Handle forwarded messages correctly for older Pyrogram
+        if message.forward_from_chat:
+            forwarded_channel_id = message.forward_from_chat.id
             extra_channels = await client.mongodb.get_db_channels()
             all_db_channels = [main_channel] + extra_channels
-            
             if forwarded_channel_id in all_db_channels:
-                msg_id = message.forward_origin.message_id
+                msg_id = message.forward_from_message_id
                 channel_id = forwarded_channel_id
             else:
-                 # Copy
-                 pass
+                # Not from a DB channel – will copy below
+                pass
         
         if not msg_id:
-             # Not from our DB or clean upload, copy to selected channel
-             channel_id = await client.mongodb.get_next_db_channel(main_channel)
-             post = await message.copy(chat_id=channel_id, caption=message.caption)
-             msg_id = post.id
+            # Not a forward or forward from non-DB: copy to a selected DB channel
+            channel_id = await client.mongodb.get_next_db_channel(main_channel)
+            post = await message.copy(chat_id=channel_id, caption=message.caption)
+            msg_id = post.id
              
-        # Extract filename for display
         file_name = message.document.file_name if message.document else ""
         if not file_name and message.caption:
-             file_name = message.caption.split("\n")[0][:50]
+            file_name = message.caption.split("\n")[0][:50]
             
-        # 🔐 Generate hybrid token (stored in MongoDB)
+        # Generate hybrid token
         try:
             token = await client.mongodb.create_file_token(channel_id, msg_id)
             link = f"https://t.me/{client.username}?start={token}"
         except Exception as e:
             print(f"Token creation failed: {e}")
-            # Fallback to Base64
             base64_string = await encode(f"get-{msg_id * abs(channel_id)}")
             link = f"https://t.me/{client.username}?start={base64_string}"
         
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
-        
         text = ""
         if file_name:
-             text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
+            text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
         text += f"<b>{sc('here is your link')}</b>\n\n<code>{link}</code>"
         
         await msg.edit_text(text, reply_markup=reply_markup)
