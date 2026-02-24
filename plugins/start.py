@@ -10,6 +10,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import humanize
 import secrets
 import json
+import asyncio
 
 # Import the new button functions from others.py
 from plugins.others import home_buttons, home_buttons_admin
@@ -213,17 +214,6 @@ async def start_command(client: Client, message: Message):
                 ids = [start_msg_id]
                 
             custom_chat_id = channel_id
-
-            # --- NEW: Verify bot can access the channel ---
-            try:
-                await client.get_chat(custom_chat_id)
-            except Exception as e:
-                return await message.reply(
-                    f"❌ **Bot cannot access the channel where this file is stored.**\n"
-                    f"Make sure I am still an admin in that channel.\n"
-                    f"Error: {e}"
-                )
-            # ---------------------------------------------
             
         elif not is_batch:
             # ----- OLD BASE64 PATH -----
@@ -276,7 +266,7 @@ async def start_command(client: Client, message: Message):
             )
             
             if is_first_file and credit_data.get("referred_by"):
-                # reward referrer (code omitted for brevity)
+                # reward referrer
                 pass
 
         # If not premium and token verification enabled, show shortener
@@ -293,14 +283,21 @@ async def start_command(client: Client, message: Message):
                 elif ids:
                     try:
                         t_msg_id = ids[0]
-                        t_chat_id = custom_chat_id if custom_chat_id else client.db
+                        # Correct channel selection for caption fetching
+                        main_db = getattr(client, 'db_channel_id', client.db)
+                        extra_dbs = await client.mongodb.get_db_channels()
+                        caption_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
                         
-                        f_msg = await client.get_messages(t_chat_id, t_msg_id)
-                        if f_msg:
-                            if f_msg.document:
-                                content_name = f"🎬 <b>{f_msg.document.file_name}</b>\n\n"
-                    except:
-                        pass
+                        for chan in caption_channels:
+                            try:
+                                if not chan: continue
+                                f_msg = await client.get_messages(chan, t_msg_id)
+                                if f_msg and not f_msg.empty:
+                                    if f_msg.document:
+                                        content_name = f"🎬 <b>{f_msg.document.file_name}</b>\n\n"
+                                    break
+                            except: continue
+                    except: pass
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Error fetching content name: {e}")
             
@@ -338,7 +335,7 @@ async def start_command(client: Client, message: Message):
                 message.stop_propagation()
             return
         
-        # Handle batch links after verification (if user is premium or used credits)
+        # Handle batch links after verification
         if original_base64.startswith("batch_"):
              batch_id = original_base64.replace("batch_", "").strip()
              from plugins.batch_handler import process_batch
@@ -346,38 +343,36 @@ async def start_command(client: Client, message: Message):
              message.stop_propagation()
              return
 
-        # ------------------ FETCH AND SEND FILES ------------------
+        # ------------------ FETCH AND SEND FILES (UPDATED FOR MULTI-DB) ------------------
         temp_msg = await message.reply(f"{sc('wait a sec')}..")
         
-        try:
-            if custom_chat_id:
-                messages = await get_messages(client, ids, custom_chat_id)
-            else:
-                messages = await get_messages(client, ids)
-        except Exception as e:
-            await temp_msg.edit_text(f"{sc('something went wrong')}..!")
-            client.LOGGER(__name__, client.name).warning(f"Error fetching messages: {e}")
-            return
+        # Get all possible DB channels to search
+        main_db = getattr(client, 'db_channel_id', client.db)
+        extra_dbs = await client.mongodb.get_db_channels()
+        
+        # If hybrid token provided a specific ID, try that first, then fall back to all DBs
+        search_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
+        
+        valid_messages = []
+        
+        for channel in search_channels:
+            if not channel: continue
+            try:
+                messages = await get_messages(client, ids, channel)
+                # Filter out None/Empty messages
+                valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
+                if valid_messages:
+                    break # Found the file!
+            except Exception:
+                continue
 
-        # Filter out None messages (invalid/deleted)
-        valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
         if not valid_messages:
-            # Fallback: try main DB channel in case it's an old link
-            if custom_chat_id and custom_chat_id != client.db:
-                client.LOGGER(__name__, client.name).warning(f"No messages found in {custom_chat_id}, trying main DB")
-                try:
-                    messages = await get_messages(client, ids, client.db)
-                    valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
-                except Exception as e:
-                    client.LOGGER(__name__, client.name).warning(f"Fallback fetch error: {e}")
+            await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
+            return
             
-            if not valid_messages:
-                await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
-                return
         await temp_msg.delete()
 
         yugen_msgs = []
-
         for msg in valid_messages:
             caption = (
                 client.messages.get('CAPTION', '').format(
@@ -404,7 +399,6 @@ async def start_command(client: Client, message: Message):
             )
             asyncio.create_task(delete_files(yugen_msgs, client, warning, text))
         elif not yugen_msgs:
-            # No files were sent – notify user
             await client.send_message(
                 user_id,
                 f"❌ {sc('failed to send files. please try again later.')}"
