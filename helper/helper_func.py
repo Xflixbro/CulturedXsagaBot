@@ -271,9 +271,9 @@ async def delete_files(messages, client, k, enter):
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
         
-        # Removed the Try Again button creation logic
+        # No "Try Again" button – just the final message in bold italic
         
     await k.edit_text(
-        "||___⏰ Time is over\nYour files has been deleted ✅___||",
-        parse_mode=enums.ParseMode.MARKDOWN
+        "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
+        parse_mode=enums.ParseMode.HTML
     )
