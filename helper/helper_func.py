@@ -94,9 +94,15 @@ async def get_messages(client, message_ids, chat_id=None):
     return messages
 
 async def get_message_id(client, message):
-    target_chat_id = getattr(client, 'db_channel_id', client.db)
+    # Get main DB channel ID
+    main_channel = getattr(client, 'db_channel_id', client.db)
+    # Get extra DB channels from MongoDB
+    extra_channels = await client.mongodb.get_db_channels() if hasattr(client, 'mongodb') else []
+    # Combine all valid DB channels
+    all_db_channels = [main_channel] + extra_channels
+
     if message.forward_from_chat:
-        if message.forward_from_chat.id == target_chat_id:
+        if message.forward_from_chat.id in all_db_channels:
             return message.forward_from_message_id
         else:
             return 0
@@ -104,20 +110,25 @@ async def get_message_id(client, message):
         return 0
     elif message.text:
         pattern = r"https://t.me/(?:c/)?(.*)/(\d+)"
-        matches = re.match(pattern,message.text)
+        matches = re.match(pattern, message.text)
         if not matches:
             return 0
-        channel_id = matches.group(1)
+        channel_identifier = matches.group(1)
         msg_id = int(matches.group(2))
-        if channel_id.isdigit():
-            if f"-100{channel_id}" == str(client.db):
+        if channel_identifier.isdigit():
+            # Private channel link (t.me/c/123/456)
+            channel_id = int(f"-100{channel_identifier}")
+            if channel_id in all_db_channels:
                 return msg_id
         else:
-            if channel_id == client.db_channel.username:
+            # Public channel link (t.me/username/123)
+            # Check if it matches the main channel's username
+            if hasattr(client, 'db_channel') and client.db_channel.username and channel_identifier == client.db_channel.username:
                 return msg_id
+            # Optionally, you could store usernames for extra channels and check them here
     else:
         return 0
-
+    return 0
 
 def get_readable_time(seconds: int) -> str:
     count = 0
