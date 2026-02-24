@@ -2,7 +2,7 @@ import base64
 import re
 import asyncio
 import aiohttp
-from pyrogram import filters, Client
+from pyrogram import filters, Client, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, Forbidden, PeerIdInvalid, ChatAdminRequired, FloodWait
@@ -271,17 +271,9 @@ async def delete_files(messages, client, k, enter):
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
         
-        command = enter.split(" ")
-        command_part = command[1] if len(command) > 1 else None
+        # Removed the Try Again button creation logic
         
-        keyboard = None
-        if command_part:
-            url = f"https://t.me/{client.username}?start={command_part}"
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Try Again", url=url)]
-            ])
-            
     await k.edit_text(
-        "<blockquote><b><i>Your Video / File Is Successfully Deleted ✅</i></b></blockquote>",
-        reply_markup=keyboard
+        "||___⏰ Time is over\nYour files has been deleted ✅___||",
+        parse_mode=enums.ParseMode.MARKDOWN
     )
