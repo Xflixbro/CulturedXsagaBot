@@ -171,9 +171,10 @@ async def add_db_channel_cb(client, query):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
+    # Extract channel ID - FIXED for older Pyrogram version
     channel_id = None
-    if res.forward_origin and res.forward_origin.type == "channel":
-        channel_id = res.forward_origin.chat.id
+    if res.forward_from_chat:  # Changed from forward_origin
+        channel_id = res.forward_from_chat.id
     elif res.text:
         try:
             channel_id = int(res.text.strip())
@@ -187,6 +188,7 @@ async def add_db_channel_cb(client, query):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
+    # Verify the bot is an admin in the channel
     try:
         chat = await client.get_chat(channel_id)
         bot_member = await chat.get_member("me")
@@ -210,6 +212,7 @@ async def add_db_channel_cb(client, query):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
             )
 
+    # Add to database
     try:
         await client.mongodb.add_db_channel(channel_id)
         await query.message.edit_text(
@@ -223,6 +226,7 @@ async def add_db_channel_cb(client, query):
             f"**❌ Database error:**\n`{e}`",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
+
 
 @Client.on_callback_query(filters.regex("^rm_db_channel$"))
 async def rm_db_channel_cb(client, query):
