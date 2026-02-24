@@ -346,18 +346,22 @@ async def start_command(client: Client, message: Message):
                 messages = await get_messages(client, ids, custom_chat_id)
             else:
                 messages = await get_messages(client, ids)
-        except:
+        except Exception as e:
             await temp_msg.edit_text(f"{sc('something went wrong')}..!")
+            client.LOGGER(__name__, client.name).warning(f"Error fetching messages: {e}")
             return
-        finally:
-            if messages:
-                await temp_msg.delete()
-            else:
-                await temp_msg.edit(f"{sc('couldnt find the files in database')}.")
+
+        # Filter out None messages (invalid/deleted)
+        valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
+        if not valid_messages:
+            await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
+            return
+        else:
+            await temp_msg.delete()
 
         yugen_msgs = []
 
-        for msg in messages:
+        for msg in valid_messages:
             caption = (
                 client.messages.get('CAPTION', '').format(
                     previouscaption=f"<blockquote>{msg.caption.html}</blockquote>" if msg.caption else f"<blockquote>{msg.document.file_name}</blockquote>"
@@ -373,15 +377,21 @@ async def start_command(client: Client, message: Message):
                     protect_content=client.protect
                 )
                 yugen_msgs.append(copied_msg)
-            except:
-                pass
+            except Exception as e:
+                client.LOGGER(__name__, client.name).warning(f"Failed to copy message {msg.id}: {e}")
 
-        if messages and client.auto_del > 0:
+        if yugen_msgs and client.auto_del > 0:
             warning = await client.send_message(
                 user_id,
                 f"<b>⚠️ {sc('file will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
             asyncio.create_task(delete_files(yugen_msgs, client, warning, text))
+        elif not yugen_msgs:
+            # No files were sent – notify user
+            await client.send_message(
+                user_id,
+                f"❌ {sc('failed to send files. please try again later.')}"
+            )
         return
 
     # ---------------- NORMAL /start UI ----------------
