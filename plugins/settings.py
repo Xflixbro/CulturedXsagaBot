@@ -4,6 +4,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors.pyromod import ListenerTimeout
+from pyrogram.enums import ChatMemberStatus
 from config import OWNER_ID, URL_SHORTENERS
 import humanize
 from helper.font_converter import to_small_caps as sc
@@ -150,41 +151,78 @@ async def add_db_channel_cb(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**➕ Add DB Channel:**</blockquote>
-    
-__Forward a message from the channel OR send the Channel ID.__
-__Make sure the bot is ADMIN in that channel!__
 
-_Timeout: 60s_
-"""
-    await query.message.edit_text(msg)
+    await query.message.edit_text(
+        "<blockquote>**➕ Add DB Channel**</blockquote>\n\n"
+        "Forward a message from the channel **OR** send the Channel ID.\n"
+        "Make sure the bot is **ADMIN** in that channel!\n\n"
+        "_Timeout: 60s_"
+    )
+
     try:
-        res = await client.listen(user_id=query.from_user.id, filters=filters.text | filters.forwarded, timeout=60)
-        
-        channel_id = None
-        if res.forward_origin and res.forward_origin.type == "channel":
-            channel_id = res.forward_origin.chat.id
-        elif res.text:
-            try:
-                channel_id = int(res.text.strip())
-            except:
-                pass
-        
-        if not channel_id:
-             return await query.message.edit_text("**❌ Invalid Channel ID!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
-
-        # Verify bot access
-        try:
-            chat = await client.get_chat(channel_id)
-            # await chat.get_member(client.me.id) # Check if admin? (Optional)
-        except Exception as e:
-             return await query.message.edit_text(f"**❌ Bot cannot access that channel!**\nError: {e}\n\nMake sure bot is added as Admin.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
-
-        await client.mongodb.add_db_channel(channel_id)
-        await query.message.edit_text(f"**✅ Channel `{channel_id}` added to Multi-DB!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
-
+        res = await client.listen(
+            user_id=query.from_user.id,
+            filters=filters.text | filters.forwarded,
+            timeout=60
+        )
     except ListenerTimeout:
-        await query.message.edit_text("**⌚ Timeout!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
+        return await query.message.edit_text(
+            "**⌚ Timeout!**",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+        )
+
+    channel_id = None
+    if res.forward_origin and res.forward_origin.type == "channel":
+        channel_id = res.forward_origin.chat.id
+    elif res.text:
+        try:
+            channel_id = int(res.text.strip())
+        except ValueError:
+            pass
+
+    if not channel_id:
+        return await query.message.edit_text(
+            "**❌ Invalid Channel ID!**\n"
+            "Make sure you forwarded a message from the channel or sent a valid numeric ID.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+        )
+
+    try:
+        chat = await client.get_chat(channel_id)
+        bot_member = await chat.get_member("me")
+        if bot_member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+            return await query.message.edit_text(
+                f"**❌ Bot is not an admin in {chat.title}**\n"
+                f"Please add the bot as an administrator and try again.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+            )
+    except Exception as e:
+        error_msg = str(e)
+        if "CHANNEL_INVALID" in error_msg or "PEER_ID_INVALID" in error_msg:
+            return await query.message.edit_text(
+                "**❌ Channel not found!**\n"
+                "Make sure the bot is added to the channel and the ID is correct.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+            )
+        else:
+            return await query.message.edit_text(
+                f"**❌ Error accessing channel:**\n`{error_msg}`",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+            )
+
+    try:
+        await client.mongodb.add_db_channel(channel_id)
+        await query.message.edit_text(
+            f"**✅ Channel added successfully!**\n"
+            f"**ID:** `{channel_id}`\n"
+            f"**Name:** {chat.title}",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+        )
+    except Exception as e:
+        await query.message.edit_text(
+            f"**❌ Database error:**\n`{e}`",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
+        )
 
 @Client.on_callback_query(filters.regex("^rm_db_channel$"))
 async def rm_db_channel_cb(client, query):
@@ -348,7 +386,6 @@ _{sc('timeout')}: 60s_
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]])
         )
         
-        # Notify user
         try:
             await client.send_message(
                 user_id,
@@ -394,7 +431,6 @@ _{sc('timeout')}: 60s_
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]])
         )
         
-        # Notify user
         try:
             await client.send_message(
                 user_id,
@@ -561,7 +597,6 @@ async def url_shorteners(client, query):
 **Active Providers:** `{len([k for k, v in URL_SHORTENERS.items() if v.get('active', False)])}`
 
 """
-    # Global System Status
     token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
     system_status = "✅ Enabled" if token_verification_enabled else "❌ Disabled"
     msg += f"**Global Verification System:** {system_status}\n\n"
@@ -603,7 +638,6 @@ __Enter new integer value of auto delete timer, keep 0 to disable auto delete an
             timer = int(timer)
             if timer >= 0:
                 client.auto_del = timer
-                # 💾 Save to MongoDB
                 await client.mongodb.set_bot_config('auto_del', timer)
                 return await query.message.edit_text(f'**Auto Delete timer value changed to {timer} seconds!**', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
             else:
@@ -707,7 +741,6 @@ __Enter new link of fsub image or send the photo, or wait for 60 second timeout 
         return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
 
 
-# URL Shortener Management Callbacks
 @Client.on_callback_query(filters.regex("^add_shortener$"))
 async def add_shortener(client, query):
     if query.from_user.id not in client.admins:
