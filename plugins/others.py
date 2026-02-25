@@ -16,7 +16,7 @@ CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replac
 
 # Credit info text with HTML links – bold small caps
 
-CREDIT_TXT = """
+CREDIT_INFO = """
 <b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
 
 ➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
