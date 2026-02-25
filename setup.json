@@ -1,26 +1,26 @@
-[
+ [
     {
         "session": "ses1",
-        "token": "8322793994:AAGiFwNq_MksA6K77RBSZ4bEpZSOT2IhFPA",
-        "api_id": "15529802",
-        "api_hash": "92bcb6aa798a6f1feadbc917fccb54d3",
+        "token": "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA",
+        "api_id": "27050683",
+        "api_hash": "013a5c0b1f2c320b98236cf212835d59",
         "workers": 8,
-        "db_uri": "mongodb+srv://CineXeonFile:CineXeonFile@cluster0.dokar6b.mongodb.net/?appName=Cluster0",
-        "db_name": "MovieSeries",
+        "db_uri": "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+        "db_name": "CORNXVILLA",
         "fsubs": [],
-        "db": -1003536384063,
+        "db": -1002162795137,
         "auto_del": 300,
         "messages": {
-            "START": "<b>ʜᴇʟʟᴏ {first}\n\nɪ ᴀᴍ ғɪʟᴇ sᴛᴏʀᴇ ʙᴏᴛ, ɪ ᴄᴀɴ sᴛᴏʀᴇ ᴘʀɪᴠᴀᴛᴇ ғɪʟᴇs ɪɴ sᴘᴇᴄɪғɪᴇᴅ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴏᴛʜᴇʀ ᴜsᴇʀs ᴄᴀɴ ᴀᴄᴄᴇss ɪᴛ ғʀᴏᴍ sᴘᴇᴄɪᴀʟ ʟɪɴᴋ.</b>",
+            "START": "<b><blockquote><b><blockquote>Moshi Moshi Senpai {mention}</blockquote></b>\n<b>I'm Akuma Sama a Filestore bot of @Anime_Mortals</b></blockquote>",
             "FSUB": "Hᴇʟʟᴏ Sᴇɴᴘᴀɪ {mention}\n\n<b>Yᴏᴜ Nᴇᴇᴅ Tᴏ Jᴏɪɴ Iɴ Mʏ Cʜᴀɴɴᴇʟs Tᴏ Gᴇᴛ Fɪʟᴇs</b>",
-            "ABOUT": "<b>❏ ᴍʏ ɴᴀᴍᴇ: <a href='https://t.me/XeonFileBot'>𝐒ᴏᴘʜɪᴇ</a>\n<blockquote expandable>❏ Dᴇᴠᴇʟᴏᴘᴇʀ: <a href='https://t.me/MrXeonTg'>ᴍʀ xᴇᴏɴ</a>\n❏ ᴍʏ ʙᴇsᴛ ғʀɪᴇɴᴅ: <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>\n❏ ʟɪʙʀᴀʀʏ: <a href='https://docs.pyrogram.org'>Pʏʀᴏɢʀᴀᴍ ᴠ2</a>\n❏ ʟᴀɴɢᴜᴀɢᴇ: <a href='https://docs.python.org/3'>Pʏᴛʜᴏɴ 3</a>\n❏ ᴅᴀᴛᴀʙᴀsᴇ: <a href='https://www.mongodb.com/docs'>Mᴏɴɢᴏ ᴅʙ</a>\n❏ ʙᴏᴛ sᴇʀᴠᴇʀ: <a href='https://heroku.com'>ʜᴇʀᴏᴋᴜ</a>\n❏ ʙᴜɪʟᴅ ꜱᴛᴀᴛᴜꜱ: ᴠ5.4.1 [ᴀᴅᴠᴀɴᴄᴇ ғᴇᴀᴛᴜʀᴇs]</b></blockquote>",
+            "ABOUT": "<b><blockquote expandable>╭───────────────⍟\n├➽ Dᴇᴠᴇʟᴏᴩᴇʀ : <a href=\"https://t.me/GPGMS0\"><b>GPG</b></a>\n├➽ Oᴡɴᴇʀ : <a href=\"https://t.me/GPGMS0\"><b>𝗚𝗣𝗚</b></a>\n├➽ Aɴɪᴍᴇ Iɴᴅᴇx : <a href=\"https://t.me/Anime_Mortals\"><b>Aɴɪᴍᴇ Mᴏʀᴛᴀʟs</b></a>\n├➽ Fɪɴɪsʜᴇᴅ Aɴɪᴍᴇ : <a href=\"https://t.me/Anime_Awakeners\"><b>Aɴɪᴍᴇ Aᴡᴀᴋᴇɴᴇʀs</b></a>\n├➽ Oɴɢᴏɪɴɢ Aɴɪᴍᴇ : <a href=\"https://t.me/Ongoing_Mortals\"><b>Oɴɢᴏɪɴɢ Mᴏʀᴛᴀʟ</b></a>\n├➽ Mᴀɴʜᴡᴀ / Mᴀɴɢᴀ : <a href=\"https://t.me/Manhwa_Mortals\"><b>Mᴀɴʜᴡᴀ Mᴏʀᴛᴀʟs</b></a>\n├➽ Nᴇᴛᴡᴏʀᴋ : <a href=\"https://t.me/The_Awakeners\"><b>Tʜᴇ Aᴡᴀᴋᴇɴᴇʀs</b></a>\n├➽ Rᴇǫ/Cʜᴀᴛ : <a href=\"https://t.me/Mortals_Realm\"><b>Mᴏʀᴛᴀʟs Rᴇᴀʟᴍ</b></a>\n╰───────────────⍟</blockquote></b>",
             "REPLY": "<b><blockquote>❌𝗗𝗼𝗻'𝘁 𝘀𝗲𝗻𝗱 𝗺𝗲 𝗱𝗶𝗿𝗲𝗰𝘁 𝗺𝗲𝘀𝘀𝗮𝗴𝗲𝘀 𝗶𝗻 𝗱𝗺, 𝗱𝗼 𝘆𝗼𝘂 𝗵𝗮𝘃𝗲 𝗮 𝗱𝗲𝗮𝘁𝗵 𝘄𝗶𝘀𝗵?</blockquote></b>",
             "START_PHOTO": "",
             "FSUB_PHOTO": ""
         },
         "admins": [
             123456789,
-            821215952
+            987654321
         ],
         "disable_btn": true,
         "protect": false,
@@ -28,7 +28,7 @@
             "expiry_days": 30,
             "referral_reward": 5,
             "payment_method": "manual",
-            "upi_id": "NOTAVAILABLE",
+            "upi_id": "GPGpapaji@Fam",
             "phone": "XXXXXXXXXX",
             "packages": [
                 {
