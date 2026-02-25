@@ -168,7 +168,7 @@ async def premium_plans_callback(client: Client, query: CallbackQuery):
     premium_text = PREPLANSS_TXT.format(first=query.from_user.first_name)
     
     buttons = [
-        [InlineKeyboardButton("💰 Buy Now", url="https://t.me/Cultured_Support_bot?start=0")],
+        [InlineKeyboardButton("💰 Buy Now", url="https://t.me/mfxdmbot?start=0")],
         [InlineKeyboardButton("🔙 Back", callback_data="home")]
     ]
     
