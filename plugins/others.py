@@ -137,7 +137,7 @@ async def channels_menu_callback(client: Client, query: CallbackQuery):
 async def credit_info_callback(client: Client, query: CallbackQuery):
     """Credit info panel with HTML links – bold small caps"""
     await query.message.edit_text(
-        text=CREDIT_TEXT,
+        text=CREDIT_INFO,
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Home", callback_data="home"),
              InlineKeyboardButton("Close", callback_data="close")]
