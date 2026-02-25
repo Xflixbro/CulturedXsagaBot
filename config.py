@@ -4,31 +4,31 @@ from logging.handlers import RotatingFileHandler
 
 LOG_FILE_NAME = "bot.log"
 PORT = '8000'
-OWNER_ID = 821215952
+OWNER_ID = 6048003536
 MSG_EFFECT = 5046509860389126442
 
 # BOT CONFIGURATION
 # ===========================
 
 # Telegram API Credentials (Get from https://my.telegram.org)
-API_ID = 15529802
-API_HASH = "92bcb6aa798a6f1feadbc917fccb54d3"
-BOT_TOKEN = "8322793994:AAGiFwNq_MksA6K77RBSZ4bEpZSOT2IhFPA"
+API_ID = 27050683
+API_HASH = "013a5c0b1f2c320b98236cf212835d59"
+BOT_TOKEN = "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA"
 
 # ===========================
 # DATABASE
 # ===========================
 
 # MongoDB Connection String
-DATABASE_URI = "mongodb+srv://CineXeonFile:CineXeonFile@cluster0.dokar6b.mongodb.net/?appName=Cluster0"
-DATABASE_NAME = "MovieSeries"
+DATABASE_URI = "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_NAME = "CORNXVILLA"
 
 # ===========================
 # CHANNELS
 # ===========================
 
 # Main Database Channel ID (where files are stored)
-DB_CHANNEL = -1003536384063
+DB_CHANNEL = -1002162795137
 
 # Force Subscribe Channels (users must join these)
 FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
@@ -38,7 +38,7 @@ FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
 # ===========================
 
 # Admin User IDs (can use admin commands)
-ADMINS = [821215952]  # Example: [123456789, 987654321]
+ADMINS = [6048003536]  # Example: [123456789, 987654321]
 
 # ===========================
 # SERVER (Optional)
