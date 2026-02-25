@@ -15,17 +15,17 @@ CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replac
 # ============================================================
 
 # Credit info text with HTML links – bold small caps
-CREDIT_TEXT = """
-<b>⍟───[ ᴍᴀᴅᴇ ʙʏ ᴛᴇᴀᴍ & ᴏᴜʀ ᴄʀᴇᴅɪᴛꜱ ]───⍟
 
-➤ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
-➤ ᴄᴏ-ᴍᴀꜱᴛᴇʀ : <a href='t.me/cosmic_freak'>ᴏᴍᴀʀ</a>
-➤ ᴇxᴛʀᴀ ᴄᴏᴅᴇʀꜱ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ᴄʀᴀᴛᴏʀᴏᴜ</a>
-➤ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴍᴀꜱᴛᴇʀx ʙᴏᴛ</a>
-➤ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪꜱ ᴘᴇʀꜱᴏɴ</a>
-➤ ᴄᴏᴜʀᴀɢᴇ ᴍᴀꜱᴛᴇʀ : <a href='https://youtu.be/uf8F97ONQbc?si=6icZPNIvFEf-bXeU'>ʜᴇʀᴏ</a>
-➤ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ ꜱᴏᴜʀᴄᴇ ᴍᴀꜱᴛᴇʀ ᴘʀᴏᴊᴇᴄᴛ</b>
-"""
+CREDIT_TXT = """
+<b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
+
+➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
+➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
+➥ ᴇxᴛʀᴀ ᴄᴏᴅᴇ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
+➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴄᴏᴅᴇx ʙᴏᴛ</a>
+➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
+➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href="https://youtu.be/xvFZjo5PgG0?si=xED3mG2R8_msmL2u">ʜᴇʀᴇ</a>
+➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ</b>"""
 
 # Disclaimer text – exact copy with small caps, wrapped in bold
 DISCLAIMER_TEXT = """
