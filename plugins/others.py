@@ -16,28 +16,42 @@ CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replac
 
 # Credit info text with HTML links – bold small caps
 CREDIT_TEXT = """
-<b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
+<b>⍟───[ ᴍᴀᴅᴇ ʙʏ ᴛᴇᴀᴍ & ᴏᴜʀ ᴄʀᴇᴅɪᴛꜱ ]───⍟
 
-➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
-➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
-➥ ᴇxᴛʀᴀ ꜰᴇᴀᴛᴜʀᴇꜱ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
-➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴄᴏᴅᴇx ʙᴏᴛ</a>
-➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
-➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href='https://youtu.be/uf8F97ONQbc?si=6icZPNIvFEf-bXeU'>ʜᴇʀᴇ</a>
-➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ</b>
+➤ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
+➤ ᴄᴏ-ᴍᴀꜱᴛᴇʀ : <a href='t.me/cosmic_freak'>ᴏᴍᴀʀ</a>
+➤ ᴇxᴛʀᴀ ᴄᴏᴅᴇʀꜱ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ᴄʀᴀᴛᴏʀᴏᴜ</a>
+➤ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴍᴀꜱᴛᴇʀx ʙᴏᴛ</a>
+➤ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪꜱ ᴘᴇʀꜱᴏɴ</a>
+➤ ᴄᴏᴜʀᴀɢᴇ ᴍᴀꜱᴛᴇʀ : <a href='https://youtu.be/uf8F97ONQbc?si=6icZPNIvFEf-bXeU'>ʜᴇʀᴏ</a>
+➤ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ ꜱᴏᴜʀᴄᴇ ᴍᴀꜱᴛᴇʀ ᴘʀᴏᴊᴇᴄᴛ</b>
 """
 
 # Disclaimer text – exact copy with small caps, wrapped in bold
 DISCLAIMER_TEXT = """
-<b>ᴀʟʟ ᴛʜᴇ ꜰɪʟᴇꜱ ɪɴ ᴛʜɪꜱ ʙᴏᴛ ᴀʀᴇ ꜰʀᴇᴇʟʏ ᴀᴠᴀɪʟᴀʙʟᴇ ᴏɴ ᴛʜᴇ ɪɴᴛᴇʀɴᴇᴛ ᴏʀ ᴘᴏꜱᴛᴇᴅ ʙʏ ꜱᴏᴍᴇʙᴏᴅʏ ᴇʟꜱᴇ. ᴊᴜꜱᴛ ꜰᴏʀ ᴇᴀꜱʏ ꜱᴇᴀʀᴄʜɪɴɢ ᴛʜɪꜱ ʙᴏᴛ ɪꜱ ɪɴᴅᴇxɪɴɢ ꜰɪʟᴇꜱ ᴡʜɪᴄʜ ᴀʀᴇ ᴀʟʀᴇᴀᴅʏ ᴜᴘʟᴏᴀᴅᴇᴅ ᴏɴ ᴛᴇʟᴇɢʀᴀᴍ. ᴡᴇ ʀᴇꜱᴘᴇᴄᴛ ᴀʟʟ ᴛʜᴇ ᴄᴏᴘʏʀɪɢʜᴛ ʟᴀᴡꜱ ᴀɴᴅ ᴡᴏʀᴋꜱ ɪɴ ᴄᴏᴍᴘʟɪᴀɴᴄᴇ ᴡɪᴛʜ ᴅᴍᴄᴀ ᴀɴᴅ ᴇᴜᴄᴅ. ɪꜰ ᴀɴʏᴛʜɪɴɢ ɪꜱ ᴀɢᴀɪɴꜱᴛ ʟᴀᴡ ᴘʟᴇᴀꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴍᴇ ꜱᴏ ᴛʜᴀᴛ ɪᴛ ᴄᴀɴ ʙᴇ ʀᴇᴍᴏᴠᴇᴅ ᴀꜱᴀᴘ. ɪᴛ ɪꜱ ꜰᴏʀʙɪʙʙᴇɴ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ, ꜱᴛʀᴇᴀᴍ, ʀᴇᴘʀᴏᴅᴜᴄᴇ, ꜱʜᴀʀᴇ ᴏʀ ᴄᴏɴꜱᴜᴍᴇ ᴄᴏɴᴛᴇɴᴛ ᴡɪᴛʜᴏᴜᴛ ᴇxᴘʟɪᴄɪᴛ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ꜰʀᴏᴍ ᴛʜᴇ ᴄᴏɴᴛᴇɴᴛ ᴄʀᴇᴀᴛᴏʀ ᴏʀ ʟᴇɢᴀʟ ᴄᴏᴘʏʀɪɢʜᴛ ʜᴏʟᴅᴇʀ. ɪꜰ ʏᴏᴜ ʙᴇʟɪᴇᴠᴇ ᴛʜɪꜱ ʙᴏᴛ ɪꜱ ᴠɪᴏʟᴀᴛɪɴɢ ʏᴏᴜʀ ɪɴᴛᴇʟʟᴇᴄᴛᴜᴀʟ ᴘʀᴏᴘᴇʀᴛʏ, ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ʀᴇꜱᴘᴇᴄᴛɪᴠᴇ ᴄʜᴀɴɴᴇʟꜱ ꜰᴏʀ ʀᴇᴍᴏᴠᴀʟ. ᴛʜᴇ ʙᴏᴛ ᴅᴏᴇꜱ ɴᴏᴛ ᴏᴡɴ ᴀɴʏ ᴏꜰ ᴛʜᴇꜱᴇ ᴄᴏɴᴛᴇɴᴛꜱ, ɪᴛ ᴏɴʟʏ ɪɴᴅᴇx ᴛʜᴇ ꜰɪʟᴇꜱ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ.</b>
+<b>ᴀʟʟ ᴛʜᴇ ᴄᴏɴᴛᴇɴᴛꜱ ɪɴ ᴛʜɪꜱ ʙᴏᴛ ᴀʀᴇ ᴄʀᴇᴀᴛᴇᴅ ʙʏ ᴛʜᴇ ɪɴᴛᴇʀɴᴇᴛ ᴏʀ ᴘᴏꜱᴛᴇᴅ ʙʏ ᴄᴏᴘʏʀɪɢʜᴛ ᴄᴏᴍᴘᴀɴɪᴇꜱ. ᴛʜᴇꜱᴇ ᴄɪɴᴇᴍᴀ ᴏʀ ꜰɪʟᴍꜱ ᴀʀᴇ ᴏɴʟɪɴᴇ ᴇꜱᴛɪᴍᴀᴛᴇᴅ ꜰʀᴏᴍ ᴛʜᴇ ɪɴᴛᴇʀɴᴇᴛ. ɪ ᴅᴏ ɴᴏᴛ ʜᴀᴠᴇ ᴀɴʏ ᴘᴇʀᴍɪꜱꜱɪᴏɴ ᴏɴ ᴛʜɪꜱ ꜰɪʟᴇꜱ ᴀɴᴅ ᴛʜᴇꜱᴇ ꜰɪʟᴇꜱ ᴀʀᴇ ᴜᴘʟᴏᴀᴅᴇᴅ ʙʏ ᴛʜᴇ ᴜꜱᴇʀꜱ. ɪꜰ ʏᴏᴜ ᴛʜɪɴᴋ ᴛʜɪꜱ ʙᴏᴛ ɪꜱ ʜᴀʀᴍꜰᴜʟ ᴛᴏ ʏᴏᴜʀ ɪɴᴛᴇʀɴᴇᴛ ᴘʀᴏᴘᴇʀᴛʏ, ᴄᴏɴᴛᴀᴄᴛ ᴛʜᴇ ʀᴇꜱᴘᴇᴄᴛɪᴠᴇ ᴏꜰꜰɪᴄɪᴀʟ ᴀᴜᴛʜᴏʀɪᴛɪᴇꜱ ᴛᴏ ɢᴇᴛ ʀᴇᴍᴏᴠᴇᴅ. ɪᴛ ɪꜱ ʏᴏᴜʀ ʀᴇꜱᴘᴏɴꜱɪʙɪʟɪᴛʏ ᴛᴏ ᴄᴏᴍᴘʟʏ ᴡɪᴛʜ ᴀʟʟ ᴀᴘᴘʟɪᴄᴀʙʟᴇ ʟᴀᴡꜱ ɪɴ ʏᴏᴜʀ ᴄᴏᴜɴᴛʀʏ ʙᴇꜰᴏʀᴇ ᴜꜱɪɴɢ ᴛʜɪꜱ ʙᴏᴛ.</b>
 """
+
+# ==================== NEW PREMIUM PLANS TEXT ====================
+PREPLANSS_TXT = """<b>👋 ʜᴇʏ {first}
+
+ᴘʀᴇᴍɪᴜᴍ ғᴇᴀᴛᴜʀᴇ ʙᴇɴɪꜰɪᴛꜱ 🎁
+❏ ɴᴏ ʟɪɴᴋ ꜱʜᴏʀᴛᴇɴᴇʀ
+❏ ɢᴇᴛ ᴅɪʀᴇᴄᴛ ғɪʟᴇs
+❏ ᴀᴅ-ғʀᴇᴇ ᴇxᴘᴇʀɪᴇɴᴄᴇ
+❏ ʙᴇꜱᴛ ᴠᴀʟᴜᴇ ꜰᴏʀ ᴍᴏɴᴇʏ
+❏ ᴘʀɪᴏʀɪᴛʏ ᴄᴏɴᴛᴇɴᴛ
+❏ ᴇxᴄʟᴜꜱɪᴠᴇ ᴅɪꜱᴄᴏᴜɴᴛꜱ
+
+ᴄʜᴇᴄᴋᴏᴜᴛ ᴘʟᴀɴs ᴘʀɪᴄᴇs: <a href="https://t.me/PremiumXeon/11">›› ᴄʟɪᴄᴋ ʜᴇʀᴇ</a></b>"""
+# ============================================================
 
 # ==================== BUTTON LAYOUT FUNCTIONS ====================
 
 def home_buttons():
     """Home page buttons (normal user) – no Next button"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
+        [InlineKeyboardButton("• ᴄɪɴᴇᴍᴀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
          InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
@@ -47,7 +61,7 @@ def home_buttons_admin():
     """Home page with Settings button for admins – no Next button"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("• ꜱᴇᴛᴛɪɴɢꜱ •", callback_data="settings")],
-        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
+        [InlineKeyboardButton("• ᴄɪɴᴇᴍᴀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
          InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
@@ -147,29 +161,11 @@ async def close_callback(client: Client, query: CallbackQuery):
     """Delete the message"""
     await query.message.delete()
 
-# -------------------- Premium plans callback (unchanged) --------------------
+# -------------------- Premium plans callback (updated) --------------------
 
 @Client.on_callback_query(filters.regex('^premium_plans$'))
 async def premium_plans_callback(client: Client, query: CallbackQuery):
-    premium_text = (
-        "Hello <b>{}</b>, \n\n"
-        "• Why Pay For Your Waifu?\n"
-        "📜 <b>Pricing:</b>\n"
-        "╭──────────\n"
-        "↻ ₹99 / $1 : 1 Month\n"
-        "↻ ₹179 / $2 : 2 Months\n"
-        "↻ ₹249/ $2.5: 3 Months (Most Bought)\n"
-        "↻ ₹399 / $6 : 6 Months\n"
-        "↻ ₹699/ $10 : 9 Months\n"
-        "↻ ₹999 / $12 : 12 Months\n"
-        "╰──────────\n\n"
-        "<b>💎 Premium Benefits:</b>\n"
-        "✓ Direct File Access\n"
-        "✓ No Ads or URL Shorteners\n"
-        "✓ Priority Support\n"
-        "✓ Fast Downloads\n\n"
-        "Contact here for further inquiry - @Cultured_Support_bot"
-    ).format(query.from_user.first_name)
+    premium_text = PREPLANSS_TXT.format(first=query.from_user.first_name)
     
     buttons = [
         [InlineKeyboardButton("💰 Buy Now", url="https://t.me/Cultured_Support_bot?start=0")],
