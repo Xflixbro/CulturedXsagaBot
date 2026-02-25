@@ -51,7 +51,7 @@ PREPLANSS_TXT = """<b>👋 ʜᴇʏ {first}
 def home_buttons():
     """Home page buttons (normal user) – no Next button"""
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("• ᴄɪɴᴇᴍᴀ •", callback_data="disclaimer"),
+        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
          InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
@@ -61,7 +61,7 @@ def home_buttons_admin():
     """Home page with Settings button for admins – no Next button"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("• ꜱᴇᴛᴛɪɴɢꜱ •", callback_data="settings")],
-        [InlineKeyboardButton("• ᴄɪɴᴇᴍᴀ •", callback_data="disclaimer"),
+        [InlineKeyboardButton("• ᴅɪꜱᴄʟᴀɪᴍᴇʀ •", callback_data="disclaimer"),
          InlineKeyboardButton("• ᴀʙᴏᴜᴛ •", callback_data="about")],
         [InlineKeyboardButton("• ᴘʀᴇᴍɪᴜᴍ •", callback_data="premium_plans"),
          InlineKeyboardButton("• ᴄʜᴀɴɴᴇʟ •", url=CHANNEL_MAIN)]
@@ -168,7 +168,7 @@ async def premium_plans_callback(client: Client, query: CallbackQuery):
     premium_text = PREPLANSS_TXT.format(first=query.from_user.first_name)
     
     buttons = [
-        [InlineKeyboardButton("💰 Buy Now", url="https://t.me/mfxdmbot?start=0")],
+        [InlineKeyboardButton("💰 Buy Now", url="https://t.me/mfxdmbot")],
         [InlineKeyboardButton("🔙 Back", callback_data="home")]
     ]
     
