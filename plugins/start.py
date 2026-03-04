@@ -319,8 +319,8 @@ async def start_command(client: Client, message: Message):
             buttons = InlineKeyboardMarkup([
                 [InlineKeyboardButton(f"⌜{sc('ᴏᴘᴇɴ ʟɪɴᴋ')}⌟", url=shortened_url)],
                 [
-                    InlineKeyboardButton(f"「{sc('ᴛᴜᴛᴏʀɪᴀʟ')}」", url="https://t.me/+rKJmAabX6MxmMjg9"),
-                    InlineKeyboardButton(f"「{sc('ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ')}」", url="https://t.me/PremiumXeon/11")
+                    InlineKeyboardButton(f"「{sc('ᴛᴜᴛᴏʀɪᴀʟ')}」", url="https://t.me/CulturedxSaga/109"),
+                    InlineKeyboardButton(f"「{sc('ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ')}」", url="https://t.me/Culturedxsga/100")
                 ]
             ])
             
