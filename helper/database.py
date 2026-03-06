@@ -25,6 +25,7 @@ class MongoDB:
             instance.pending_files = instance.db["pending_files"]  # Files pending grouping
             instance.file_tokens = instance.db["file_tokens"]  # Hybrid token system
             instance.rate_limits = instance.db["rate_limits"]  # Rate limiting
+            instance.channel_members = instance.db["channel_members"]  # <-- ADDED: store approved members for request channels
             cls._instances[(uri, db_name)] = instance
         return cls._instances[(uri, db_name)]
 
@@ -552,3 +553,13 @@ class MongoDB:
         await self.pending_files.delete_many({
             'timestamp': {'$lt': threshold}
         })
+
+    # =====================================================
+    # NEW METHOD: Check if user is in channel (for request channels)
+    # =====================================================
+    async def is_user_in_channel(self, channel_id: int, user_id: int) -> bool:
+        """Return True if the user has been approved for the channel (join request accepted)."""
+        result = await self.channel_members.find_one(
+            {"channel_id": channel_id, "user_id": user_id}
+        )
+        return result is not None
