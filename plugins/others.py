@@ -8,10 +8,10 @@ from helper.font_converter import to_small_caps as sc
 
 # ==================== CONFIGURABLE LINKS ====================
 CHANNEL_MAIN = "https://t.me/YourMainChannel"          # Replace with your main channel URL
-CHANNEL_MOVIES = "http://t.me/Cineflix_Saga"
-CHANNEL_SERIES = "http://t.me/seriesflix_Saga"
-CHANNEL_ANIMES = "http://t.me/anime_Saga"              # ANIMES button
-CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replace with actual link
+CHANNEL_MOVIES = "https://t.me/YourMainChannel"
+CHANNEL_SERIES = "https://t.me/YourMainChannel"
+CHANNEL_ANIMES = "https://t.me/YourMainChannel"              # ANIMES button
+CHANNEL_ADULT = "https://t.me/YourMainChannel"            # ADULT button – replace with actual link
 # ============================================================
 
 # Credit info text with HTML links – bold small caps
@@ -19,10 +19,6 @@ CHANNEL_ADULT = "http://t.me/culturedxsaga"            # ADULT button – replac
 CREDIT_INFO = """
 <b>⍟───[ ᴍʏ ᴄʀᴇᴅɪᴛꜱ & ɪɴꜰᴏ ]───⍟
 
-➥ ᴏᴡɴᴇʀ : <a href='t.me/Xeonflixadmin'>xᴇᴏɴ</a>
-➥ ʙᴀꜱᴇ ᴄᴏᴅᴇ : <a href='t.me/cosmic_freak'>ʏᴀᴛᴏ</a>
-➥ ᴇxᴛʀᴀ ᴄᴏᴅᴇ : <a href='t.me/MrXeonTG'>ɢᴏᴊᴏ ꜱᴀᴛᴏʀᴜ</a>
-➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='t.me/codexbotz'>ᴄᴏᴅᴇx ʙᴏᴛ</a>
 ➥ ᴛʜᴀɴᴋꜱ ᴛᴏ : <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>
 ➥ ꜱᴏᴜʀᴄᴇ ᴄᴏᴅᴇ : <a href="https://youtu.be/xvFZjo5PgG0?si=xED3mG2R8_msmL2u">ʜᴇʀᴇ</a>
 ➥ ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ sᴏᴜʀᴄᴇ ᴄᴏᴅᴇ ᴘʀᴏᴊᴇᴄᴛ</b>"""
