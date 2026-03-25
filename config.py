@@ -38,7 +38,7 @@ FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
 # ===========================
 
 # Admin User IDs (can use admin commands)
-ADMINS = [6048003536]  # Example: [123456789, 987654321]
+ADMINS = [6048003536, 821215952, 8365451390]  # Example: [123456789, 987654321]
 
 # ===========================
 # SERVER (Optional)
