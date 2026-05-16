@@ -29,6 +29,7 @@ A powerful Telegram bot for file sharing with advanced features including batch 
 - 🔒 **Hybrid Token System** - Secure, random 12-16 char token links with full backward compatibility for legacy Base64 links.
 - 📦 **Batch Processing** - Create batches for episodes/seasons with cancel functionality
 - 🤖 **Auto Batch** - Automatic batch creation with quality detection and configurable time windows
+- 🛑 **Restricted Batch Processing** - Create batches for episodes/seasons with cancel functionality
 - 💎 **Premium System** - Full subscription management with pricing tiers and expiry tracking
 - 🗄️ **Multi-DB Channels** - Round-robin file distribution across multiple database channels
 - 🔗 **URL Shortening** - Integrated URL shortener with multiple provider support
