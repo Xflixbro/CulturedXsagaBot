@@ -73,6 +73,7 @@ async def start_command(client: Client, message: Message):
             
         access_token = None
         original_base64 = base64_string
+        is_restricted = False
         
         # ---------------- TOKEN VERIFIED / SHORTENER SOLVED ----------------
         if "_" in base64_string:
@@ -171,10 +172,14 @@ async def start_command(client: Client, message: Message):
 
                     is_premium_user = True
                     
+                    # Get restricted flag from token
+                    token_doc = await client.mongodb.file_tokens.find_one({"_id": access_token})
+                    is_restricted = token_doc.get("restricted", False) if token_doc else False
+                    
                     if original_base64.startswith("batch_"):
                          batch_id = original_base64.replace("batch_", "").strip()
                          from plugins.batch_handler import process_batch
-                         await process_batch(client, message, batch_id)
+                         await process_batch(client, message, batch_id, restricted=is_restricted)
                          message.stop_propagation()
                          return
 
@@ -203,6 +208,9 @@ async def start_command(client: Client, message: Message):
                     f"<blockquote>❌ <b>{sc('invalid or expired link')}</b></blockquote>\n"
                     f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                 )
+            
+            # Check if token is restricted
+            is_restricted = token_doc.get("restricted", False)
             
             channel_id = token_doc["channel_id"]
             start_msg_id = token_doc["msg_id"]
@@ -339,7 +347,7 @@ async def start_command(client: Client, message: Message):
         if original_base64.startswith("batch_"):
              batch_id = original_base64.replace("batch_", "").strip()
              from plugins.batch_handler import process_batch
-             await process_batch(client, message, batch_id)
+             await process_batch(client, message, batch_id, restricted=is_restricted)
              message.stop_propagation()
              return
 
@@ -372,6 +380,10 @@ async def start_command(client: Client, message: Message):
             
         await temp_msg.delete()
 
+        # Get restricted flag for single file tokens (if not already set)
+        if not is_restricted and 'token_doc' in locals() and token_doc:
+            is_restricted = token_doc.get("restricted", False)
+
         yugen_msgs = []
         for msg in valid_messages:
             caption = (
@@ -381,12 +393,31 @@ async def start_command(client: Client, message: Message):
                 if client.messages.get('CAPTION', '') and msg.document
                 else (msg.caption.html if msg.caption else "")
             )
+            
+            # ========== PROTECT_CONTENT LOGIC FOR RESTRICTED FILES ==========
+            if is_restricted:
+                # Premium user? Allow forwarding (protect=False)
+                # Non-premium? Block forwarding (protect=True) - EVEN IF THEY HAVE CREDITS
+                protect = not is_premium_user
+                
+                # Add warning message
+                warning_text = (
+                    f"\n\n⚠️ **⏰ FILE WILL BE DELETED IN {humanize.naturaldelta(client.auto_del)}**\n"
+                    f"🚫 **🔒 NON-PREMIUM USERS CANNOT FORWARD OR SAVE THIS FILE**\n"
+                    f"💎 **PREMIUM USERS:** Forwarding & saving available"
+                )
+                if caption:
+                    caption += warning_text
+                else:
+                    caption = warning_text
+            else:
+                protect = client.protect
 
             try:
                 copied_msg = await msg.copy(
                     chat_id=user_id,
                     caption=caption,
-                    protect_content=client.protect
+                    protect_content=protect
                 )
                 yugen_msgs.append(copied_msg)
             except Exception as e:
