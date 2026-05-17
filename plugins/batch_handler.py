@@ -112,12 +112,11 @@ async def process_batch(client: Client, message: Message, batch_id: str):
             warning = await message.reply(
                 f"<b>⚠️ {sc('files will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
-            # Add all messages to delete list
+            # Only add files and restricted warning to delete list (NOT the warning message)
             all_msgs_to_delete = sent_msgs.copy()
             if restricted_warning_msg:
                 all_msgs_to_delete.append(restricted_warning_msg)
-            if warning:
-                all_msgs_to_delete.append(warning)
+            # Pass warning separately - delete_files will edit it, not delete it
             asyncio.create_task(delete_files(all_msgs_to_delete, client, warning, message.text))
             
         return
