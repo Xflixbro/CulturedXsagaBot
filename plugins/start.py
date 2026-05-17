@@ -385,12 +385,11 @@ async def start_command(client: Client, message: Message):
                 user_id,
                 f"<b>⚠️ {sc('file will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
-            # Add all messages to delete list
+            # Only add files and restricted warning to delete list (NOT the "Time is over" message)
             all_msgs_to_delete = yugen_msgs.copy()
             if restricted_warning_msg:
                 all_msgs_to_delete.append(restricted_warning_msg)
-            if warning:
-                all_msgs_to_delete.append(warning)
+            # Pass warning separately - delete_files will edit it, not delete it
             asyncio.create_task(delete_files(all_msgs_to_delete, client, warning, text))
         elif not yugen_msgs:
             await client.send_message(
