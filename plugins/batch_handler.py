@@ -100,18 +100,25 @@ async def process_batch(client: Client, message: Message, batch_id: str):
                 pass
         
         # Add warning message for restricted files
+        restricted_warning_msg = None
         if restricted and not is_premium and sent_msgs:
-            await client.send_message(
+            restricted_warning_msg = await client.send_message(
                 user_id,
-                f"⚠️ **{sc('restricted file')}**\n\n{sc('you cannot forward or save this file because it is restricted. premium users can forward/save.')}"
+                f"🔒 **{sc('restricted file')}**\n\n{sc('you cannot forward or save this file because it is restricted. premium users can forward/save.')}"
             )
-                
+        
         # Auto-Delete Logic
         if sent_msgs and client.auto_del > 0:
             warning = await message.reply(
                 f"<b>⚠️ {sc('files will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
-            asyncio.create_task(delete_files(sent_msgs, client, warning, message.text))
+            # Add all messages to delete list
+            all_msgs_to_delete = sent_msgs.copy()
+            if restricted_warning_msg:
+                all_msgs_to_delete.append(restricted_warning_msg)
+            if warning:
+                all_msgs_to_delete.append(warning)
+            asyncio.create_task(delete_files(all_msgs_to_delete, client, warning, message.text))
             
         return
 
@@ -163,8 +170,7 @@ async def batch_link_handler(client: Client, message: Message):
     if not message.text or not message.text.startswith("/start "):
         return
     
-    text = message.text
-    param = text.replace("/start ", "").strip()
+    param = message.text.replace("/start ", "").strip()
     
     # Handle normal batch (batch_ prefix)
     if param.startswith("batch_"):
@@ -177,9 +183,6 @@ async def batch_link_handler(client: Client, message: Message):
         batch_id = param.replace("rbatch_", "").strip()
         await process_batch(client, message, batch_id)
         return
-    
-    # Handle hybrid token (will be processed by start.py)
-    # Don't process other start parameters here
 
 
 @Client.on_callback_query(filters.regex(r"^batchfile_"))
