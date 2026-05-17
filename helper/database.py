@@ -197,7 +197,7 @@ class MongoDB:
         return [doc['_id'] async for doc in cursor]
 
     # =====================================================
-    # HYBRID TOKEN LINK SYSTEM (WITH RESTRICTED FLAG)
+    # HYBRID TOKEN LINK SYSTEM
     # =====================================================
 
     async def ensure_token_indexes(self):
@@ -356,6 +356,34 @@ class MongoDB:
             {'$inc': {'click_count': 1}}
         )
 
+    async def get_shortener_stats(self):
+        pipeline = [
+            {
+                '$group': {
+                    '_id': None,
+                    'total_tokens': {'$sum': 1},
+                    'total_clicks': {'$sum': '$click_count'},
+                    'total_used': {
+                        '$sum': {
+                            '$cond': [{'$eq': ['$used', True]}, 1, 0]
+                        }
+                    },
+                    'avg_clicks': {'$avg': '$click_count'}
+                }
+            }
+        ]
+        result = await self.access_tokens.aggregate(pipeline).to_list(1)
+        return result[0] if result else {
+            'total_tokens': 0,
+            'total_clicks': 0,
+            'total_used': 0,
+            'avg_clicks': 0
+        }
+
+    async def get_top_clicked_tokens(self, limit: int = 10):
+        cursor = self.access_tokens.find().sort('click_count', -1).limit(limit)
+        return [doc async for doc in cursor]
+
     # =====================================================
     # BYPASS ATTEMPT TRACKING & AUTO-BAN
     # =====================================================
@@ -374,6 +402,29 @@ class MongoDB:
             'timestamp': {'$gte': threshold}
         })
         return count
+
+    async def get_all_bypass_attempts(self, limit: int = 100):
+        cursor = self.bypass_attempts.find().sort('timestamp', -1).limit(limit)
+        return [doc async for doc in cursor]
+
+    async def get_bypass_stats(self):
+        pipeline = [
+            {
+                '$group': {
+                    '_id': '$user_id',
+                    'count': {'$sum': 1},
+                    'types': {'$push': '$type'},
+                    'last_attempt': {'$max': '$timestamp'}
+                }
+            },
+            {'$sort': {'count': -1}},
+            {'$limit': 50}
+        ]
+        result = await self.bypass_attempts.aggregate(pipeline).to_list(50)
+        return result
+
+    async def clear_bypass_attempts(self, user_id: int):
+        await self.bypass_attempts.delete_many({'user_id': user_id})
 
     async def check_and_auto_ban(self, user_id: int, max_attempts: int = 5) -> bool:
         count = await self.get_bypass_count(user_id, hours=24)
@@ -434,8 +485,8 @@ class MongoDB:
             'batch_id': batch_id,
             'base_name': base_name,
             'files': files,
-            'restricted': restricted,
-            'created': datetime.now()
+            'created': datetime.now(),
+            'restricted': restricted
         })
         
         file_ids = [f['file_id'] for f in files]
