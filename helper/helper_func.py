@@ -276,7 +276,7 @@ async def delete_files(messages, client, k, enter):
     if auto_del > 0:
         await asyncio.sleep(auto_del)
 
-        # Delete all messages in the list
+        # Delete all messages in the list (files and restricted warning only)
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -286,11 +286,11 @@ async def delete_files(messages, client, k, enter):
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
         
-        # Try to edit the warning message if it still exists
+        # Edit the warning message (k) to show completion (don't delete it)
         try:
             await k.edit_text(
                 "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
                 parse_mode=enums.ParseMode.HTML
             )
-        except Exception:
-            pass  # Message might already be deleted
+        except Exception as e:
+            client.LOGGER(__name__, client.name).warning(f"Failed to edit completion message: {e}")
