@@ -51,7 +51,7 @@ async def encode(string):
     return base64_string
 
 async def decode(base64_string):
-    base64_string = base64_string.strip("=") # links generated before this commit will be having = sign, hence striping them to handle padding errors.
+    base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
     string_bytes = base64.urlsafe_b64decode(base64_bytes) 
     string = string_bytes.decode("utf-8")
@@ -62,7 +62,7 @@ import string as _string
 
 def generate_token(length: int = 14) -> str:
     """Generate a cryptographically secure random token (URL-safe, alphanumeric only)."""
-    alphabet = _string.ascii_letters + _string.digits  # a-z A-Z 0-9
+    alphabet = _string.ascii_letters + _string.digits
     return ''.join(_secrets.choice(alphabet) for _ in range(length))
 
 def is_token_format(s: str) -> bool:
@@ -87,7 +87,6 @@ async def get_messages(client, message_ids, chat_id=None):
                 chat_id=chat_id if chat_id else int(client.db),
                 message_ids=temb_ids
             )
-        # Removed generic except block to see errors
         
         total_messages += len(temb_ids)
         messages.extend(msgs)
@@ -114,7 +113,6 @@ async def get_message_id(client, message):
     # Support for Pyrogram v1 (forward_from_chat)
     if message.forward_from_chat:
         if message.forward_from_chat.id in all_db_channels:
-            # Return Tuple: (Message ID, Channel ID)
             return message.forward_from_message_id, message.forward_from_chat.id
         else:
             return 0, None
@@ -128,16 +126,12 @@ async def get_message_id(client, message):
         channel_identifier = matches.group(1)
         msg_id = int(matches.group(2))
         if channel_identifier.isdigit():
-            # Private channel link (t.me/c/123/456)
             channel_id = int(f"-100{channel_identifier}")
             if channel_id in all_db_channels:
                 return msg_id, channel_id
         else:
-            # Public channel link (t.me/username/123)
-            # Check if it matches the main channel's username
             if hasattr(client, 'db_channel') and client.db_channel.username and channel_identifier == client.db_channel.username:
                 return msg_id, client.db_channel.id
-            # Optionally, you could store usernames for extra channels and check them here
     else:
         return 0, None
     return 0, None
@@ -282,6 +276,7 @@ async def delete_files(messages, client, k, enter):
     if auto_del > 0:
         await asyncio.sleep(auto_del)
 
+        # Delete all messages in the list
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -291,9 +286,11 @@ async def delete_files(messages, client, k, enter):
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
         
-        # No "Try Again" button – just the final message in bold italic
-        
-    await k.edit_text(
-        "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
-        parse_mode=enums.ParseMode.HTML
-    )
+        # Try to edit the warning message if it still exists
+        try:
+            await k.edit_text(
+                "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
+                parse_mode=enums.ParseMode.HTML
+            )
+        except Exception:
+            pass  # Message might already be deleted
