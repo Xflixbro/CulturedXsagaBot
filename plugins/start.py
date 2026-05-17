@@ -12,10 +12,8 @@ import secrets
 import json
 import asyncio
 
-# Import the new button functions from others.py
 from plugins.others import home_buttons, home_buttons_admin
 
-# Load credit configuration
 try:
     with open("setup.json", "r") as f:
         setup_data = json.load(f)
@@ -39,15 +37,12 @@ async def start_command(client: Client, message: Message):
     if is_banned:
         return await message.reply(f"**{sc('You have been banned from using this bot!')}**")
     
-    # Premium check
     is_premium_user = await client.mongodb.is_premium(user_id)
 
-    # Enhanced credit system
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     credit_data = await enhanced_db.get_credits(user_id)
     user_credits = credit_data.get("balance", 0)
     
-    # Check for expired credits
     await enhanced_db.check_and_remove_expired(user_id)
 
     text = message.text
@@ -70,20 +65,29 @@ async def start_command(client: Client, message: Message):
                         f"{sc('When you access your first file, your referrer will earn credits!')}"
                     )
             return
+        
+        # ============== HANDLE RESTRICTED BATCH (rbatch_ prefix) ==============
+        if base64_string.startswith("rbatch_"):
+            batch_id = base64_string.replace("rbatch_", "").strip()
+            from plugins.batch_handler import process_batch
+            await process_batch(client, message, batch_id)
+            return
+            
+        # ============== HANDLE NORMAL BATCH (batch_ prefix) ==============
+        if base64_string.startswith("batch_"):
+            batch_id = base64_string.replace("batch_", "").strip()
+            from plugins.batch_handler import process_batch
+            await process_batch(client, message, batch_id)
+            return
             
         access_token = None
         original_base64 = base64_string
-        is_restricted = False
+        restricted = False
         
-        # ---------------- TOKEN VERIFIED / SHORTENER SOLVED ----------------
+        # ---------------- TOKEN VERIFICATION ----------------
         if "_" in base64_string:
             parts = base64_string.split("_", 1)
-            if base64_string.startswith("batch_"):
-                parts = base64_string.split("_")
-                if len(parts) >= 3:
-                     original_base64 = f"{parts[0]}_{parts[1]}"
-                     access_token = parts[2]
-            elif len(parts) == 2:
+            if len(parts) == 2:
                 original_base64 = parts[0]
                 access_token = parts[1]
 
@@ -97,7 +101,6 @@ async def start_command(client: Client, message: Message):
                         user_id, access_token, original_base64
                     )
     
-                    # ======================= ANTI-BYPASS LOGIC ======================
                     if verify_result == "BYPASS":
                         if user_id not in client.admins:
                             was_banned = await client.mongodb.check_and_auto_ban(user_id, max_attempts=5)
@@ -148,7 +151,7 @@ async def start_command(client: Client, message: Message):
                         )
                         return
     
-                    # ---------------- GIVE 3 CREDITS (IF ENABLED) ----------------
+                    # Give credits if enabled
                     credit_system_enabled = await client.mongodb.is_credit_system_enabled()
                     
                     if credit_system_enabled:
@@ -171,29 +174,16 @@ async def start_command(client: Client, message: Message):
                         )
 
                     is_premium_user = True
-                    
-                    # Get restricted flag from token
-                    token_doc = await client.mongodb.file_tokens.find_one({"_id": access_token})
-                    is_restricted = token_doc.get("restricted", False) if token_doc else False
-                    
-                    if original_base64.startswith("batch_"):
-                         batch_id = original_base64.replace("batch_", "").strip()
-                         from plugins.batch_handler import process_batch
-                         await process_batch(client, message, batch_id, restricted=is_restricted)
-                         message.stop_propagation()
-                         return
 
         # -------------------------- HYBRID TOKEN / BASE64 DECODE --------------------------
         from helper.helper_func import is_token_format
-        
-        is_batch = original_base64.startswith("batch_")
         
         # Initialize variables
         ids = []
         custom_chat_id = None
         
-        if not is_batch and is_token_format(original_base64):
-            # ----- HYBRID TOKEN -----
+        # Try hybrid token first (alphanumeric, 12-16 chars)
+        if is_token_format(original_base64):
             if await client.mongodb.is_token_rate_limited(user_id):
                 return await message.reply(
                     f"<blockquote>⏳ <b>{sc('too many invalid attempts')}</b></blockquote>\n"
@@ -209,9 +199,7 @@ async def start_command(client: Client, message: Message):
                     f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                 )
             
-            # Check if token is restricted
-            is_restricted = token_doc.get("restricted", False)
-            
+            restricted = token_doc.get('restricted', False)
             channel_id = token_doc["channel_id"]
             start_msg_id = token_doc["msg_id"]
             end_msg_id = token_doc.get("end_msg_id")
@@ -223,7 +211,7 @@ async def start_command(client: Client, message: Message):
                 
             custom_chat_id = channel_id
             
-        elif not is_batch:
+        else:
             # ----- OLD BASE64 PATH -----
             try:
                 string = await decode(original_base64)
@@ -231,26 +219,30 @@ async def start_command(client: Client, message: Message):
             except Exception:
                 return
         
-            if len(argument) == 3:
-                # New format: get-CHANNEL_ID-MSG_ID (channel_id without -100)
+            if len(argument) == 3 and argument[0] in ("get", "rget"):
+                # New format: get-CHANNEL_ID-MSG_ID or rget-CHANNEL_ID-MSG_ID
+                restricted = (argument[0] == "rget")
                 try:
                     channel_id_part = int(argument[1])
                     msg_id_part = int(argument[2])
                     custom_chat_id = int(f"-100{channel_id_part}")
                     ids = [msg_id_part]
                 except:
-                    # Old range format: get-ID1-ID2
-                    try:
-                        start = int(int(argument[1]) / abs(client.db))
-                        end = int(int(argument[2]) / abs(client.db))
-                        ids = list(range(start, end + 1)) if start <= end else list(range(start, end - 1, -1))
-                    except:
-                        return
-            elif len(argument) == 2:
-                # Old single file format: get-GENERATED_ID
+                    return
+            elif len(argument) == 2 and argument[0] in ("get", "rget"):
+                # Old single file format
+                restricted = (argument[0] == "rget")
                 try:
                     msg_id = int(int(argument[1]) / abs(client.db))
                     ids = [msg_id]
+                except:
+                    return
+            elif len(argument) == 3 and argument[0] == "get":
+                # Old range format
+                try:
+                    start = int(int(argument[1]) / abs(client.db))
+                    end = int(int(argument[2]) / abs(client.db))
+                    ids = list(range(start, end + 1)) if start <= end else list(range(start, end - 1, -1))
                 except:
                     return
             else:
@@ -272,26 +264,16 @@ async def start_command(client: Client, message: Message):
                 f"⚡ {sc('1 credit used')}!\n"
                 f"{sc('remaining credits')}: {user_credits}"
             )
-            
-            if is_first_file and credit_data.get("referred_by"):
-                # reward referrer
-                pass
 
         # If not premium and token verification enabled, show shortener
-        if not is_premium_user and token_verification_enabled:
+        if not is_premium_user and token_verification_enabled and not restricted:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
             
             content_name = ""
             try:
-                if original_base64.startswith("batch_"):
-                    b_id = original_base64.replace("batch_", "").strip()
-                    batch = await client.mongodb.get_batch(b_id)
-                    if batch:
-                        content_name = f"📦 <b>{batch.get('base_name', 'Batch Pack')}</b>\n\n"
-                elif ids:
+                if ids:
                     try:
                         t_msg_id = ids[0]
-                        # Correct channel selection for caption fetching
                         main_db = getattr(client, 'db_channel_id', client.db)
                         extra_dbs = await client.mongodb.get_db_channels()
                         caption_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
@@ -339,26 +321,14 @@ async def start_command(client: Client, message: Message):
                 reply_markup=buttons,
                 protect_content=True
             )
-            if original_base64.startswith("batch_"):
-                message.stop_propagation()
             return
-        
-        # Handle batch links after verification
-        if original_base64.startswith("batch_"):
-             batch_id = original_base64.replace("batch_", "").strip()
-             from plugins.batch_handler import process_batch
-             await process_batch(client, message, batch_id, restricted=is_restricted)
-             message.stop_propagation()
-             return
 
-        # ------------------ FETCH AND SEND FILES (UPDATED FOR MULTI-DB) ------------------
+        # ------------------ FETCH AND SEND FILES (WITH RESTRICTION SUPPORT) ------------------
         temp_msg = await message.reply(f"{sc('wait a sec')}..")
         
-        # Get all possible DB channels to search
         main_db = getattr(client, 'db_channel_id', client.db)
         extra_dbs = await client.mongodb.get_db_channels()
         
-        # If hybrid token provided a specific ID, try that first, then fall back to all DBs
         search_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
         
         valid_messages = []
@@ -367,10 +337,9 @@ async def start_command(client: Client, message: Message):
             if not channel: continue
             try:
                 messages = await get_messages(client, ids, channel)
-                # Filter out None/Empty messages
                 valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
                 if valid_messages:
-                    break # Found the file!
+                    break
             except Exception:
                 continue
 
@@ -380,10 +349,9 @@ async def start_command(client: Client, message: Message):
             
         await temp_msg.delete()
 
-        # Get restricted flag for single file tokens (if not already set)
-        if not is_restricted and 'token_doc' in locals() and token_doc:
-            is_restricted = token_doc.get("restricted", False)
-
+        # Determine if protection should be applied
+        use_protect = restricted and not is_premium_user
+        
         yugen_msgs = []
         for msg in valid_messages:
             caption = (
@@ -393,35 +361,23 @@ async def start_command(client: Client, message: Message):
                 if client.messages.get('CAPTION', '') and msg.document
                 else (msg.caption.html if msg.caption else "")
             )
-            
-            # ========== PROTECT_CONTENT LOGIC FOR RESTRICTED FILES ==========
-            if is_restricted:
-                # Premium user? Allow forwarding (protect=False)
-                # Non-premium? Block forwarding (protect=True) - EVEN IF THEY HAVE CREDITS
-                protect = not is_premium_user
-                
-                # Add warning message
-                warning_text = (
-                    f"\n\n⚠️ **⏰ FILE WILL BE DELETED IN {humanize.naturaldelta(client.auto_del)}**\n"
-                    f"🚫 **🔒 NON-PREMIUM USERS CANNOT FORWARD OR SAVE THIS FILE**\n"
-                    f"💎 **PREMIUM USERS:** Forwarding & saving available"
-                )
-                if caption:
-                    caption += warning_text
-                else:
-                    caption = warning_text
-            else:
-                protect = client.protect
 
             try:
                 copied_msg = await msg.copy(
                     chat_id=user_id,
                     caption=caption,
-                    protect_content=protect
+                    protect_content=use_protect
                 )
                 yugen_msgs.append(copied_msg)
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Failed to copy message {msg.id}: {e}")
+
+        # Send warning for restricted files
+        if restricted and not is_premium_user and yugen_msgs:
+            await client.send_message(
+                user_id,
+                f"🔒 **{sc('restricted file')}**\n\n{sc('you cannot forward or save this file because it is restricted. premium users can forward/save.')}"
+            )
 
         if yugen_msgs and client.auto_del > 0:
             warning = await client.send_message(
