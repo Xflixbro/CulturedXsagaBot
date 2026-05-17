@@ -373,8 +373,9 @@ async def start_command(client: Client, message: Message):
                 client.LOGGER(__name__, client.name).warning(f"Failed to copy message {msg.id}: {e}")
 
         # Send warning for restricted files
+        restricted_warning_msg = None
         if restricted and not is_premium_user and yugen_msgs:
-            await client.send_message(
+            restricted_warning_msg = await client.send_message(
                 user_id,
                 f"🔒 **{sc('restricted file')}**\n\n{sc('you cannot forward or save this file because it is restricted. premium users can forward/save.')}"
             )
@@ -384,7 +385,13 @@ async def start_command(client: Client, message: Message):
                 user_id,
                 f"<b>⚠️ {sc('file will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
-            asyncio.create_task(delete_files(yugen_msgs, client, warning, text))
+            # Add all messages to delete list
+            all_msgs_to_delete = yugen_msgs.copy()
+            if restricted_warning_msg:
+                all_msgs_to_delete.append(restricted_warning_msg)
+            if warning:
+                all_msgs_to_delete.append(warning)
+            asyncio.create_task(delete_files(all_msgs_to_delete, client, warning, text))
         elif not yugen_msgs:
             await client.send_message(
                 user_id,
