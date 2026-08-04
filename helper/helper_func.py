@@ -8,7 +8,7 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, Forbidden, PeerIdInvalid, ChatAdminRequired, FloodWait
 from datetime import datetime, timedelta
 from pyrogram import errors
-from config import URL_SHORTENERS
+from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
 
 async def shorten_url(long_url: str) -> str:
     """
@@ -69,6 +69,16 @@ def is_token_format(s: str) -> bool:
     """Check if string looks like a new-style token (alphanumeric, 12-16 chars, no special chars)."""
     return s.isalnum() and 12 <= len(s) <= 16
 
+def generate_links(param: str, bot_username: str):
+    """
+    Generate both Telegram and permanent (website) links for a given parameter.
+    Returns: (telegram_link, permanent_link or None)
+    """
+    telegram_link = f"https://t.me/{bot_username}?start={param}"
+    permanent_link = None
+    if PERMANENT_LINKS and WEBSITE_URL:
+        permanent_link = f"{WEBSITE_URL}?{WEBSITE_PARAM}={param}"
+    return telegram_link, permanent_link
 
 async def get_messages(client, message_ids, chat_id=None):
     messages = []
