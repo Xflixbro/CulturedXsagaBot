@@ -402,11 +402,11 @@ async def start_command(client: Client, message: Message):
         await client.send_chat_action(message.chat.id, ChatAction.TYPING)
         await asyncio.sleep(0.8)
         m = await message.reply_text("✨ ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ᴍᴀɢɪᴄ...")
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.4)
 
         await client.send_chat_action(message.chat.id, ChatAction.TYPING)
         await m.edit_text("⚡ ᴘᴏᴡᴇʀɪɴɢ ᴜᴘ ʏᴏᴜʀ ᴇxᴘᴇʀɪᴇɴᴄᴇ...")
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.4)
         await m.delete()
     except Exception as e:
         print(f"Error with emoji animation: {e}")
@@ -415,9 +415,9 @@ async def start_command(client: Client, message: Message):
         try:
             sticker_id = random.choice(STICKER_IDS)
             await client.send_chat_action(message.chat.id, ChatAction.CHOOSE_STICKER)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.6)
             sticker_msg = await message.reply_sticker(sticker_id)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.6)
             await sticker_msg.delete()
         except Exception as e:
             print(f"Error sending sticker: {e}")
