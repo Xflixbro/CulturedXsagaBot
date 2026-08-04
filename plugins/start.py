@@ -17,7 +17,12 @@ import random
 from plugins.others import home_buttons, home_buttons_admin
 
 # ========== EMOJI EFFECTS CONSTANTS ==========
-STICKER_ID = "CAACAgUAAxkBAAIE8mgq9m8MiaFWYUeppQiXveQBAZaYAAKrBAACvu-4V0dQs1WLoficHgQ"
+# Multiple stickers – one will be chosen randomly
+STICKER_IDS = [
+    "CAACAgUAAxkBAAERqJtqcXmskqeM6JqZ9M8Wh58XASu82QACfQYAAjwuqFawzR8yO0pyfz0E",
+    "CAACAgUAAxkBAAERqJ1qcXm1CNamEmmgrSwJDEM-SiDylwACrQYAAi75sFY7xfNL06nYTD0E",
+    "CAACAgQAAxkBAAERqJ9qcXnOv5AbwacH4NRgbBbsbFsiCQAC4xgAAoo2OVGWcfjhDFS9nT0E"
+]
 EMOJI_MODE = True
 REACTIONS = ["🔥", "🎉"]
 MESSAGE_EFFECT_IDS = [
@@ -439,12 +444,13 @@ async def start_command(client: Client, message: Message):
     except Exception as e:
         print(f"Error with emoji animation: {e}")
 
-    # Sticker animation
-    if STICKER_ID:
+    # Sticker animation – pick a random sticker from the list
+    if STICKER_IDS:
         try:
+            sticker_id = random.choice(STICKER_IDS)
             await client.send_chat_action(message.chat.id, ChatAction.CHOOSE_STICKER)
             await asyncio.sleep(0.3)
-            sticker_msg = await message.reply_sticker(STICKER_ID)
+            sticker_msg = await message.reply_sticker(sticker_id)
             await asyncio.sleep(0.3)
             await sticker_msg.delete()
         except Exception as e:
