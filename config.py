@@ -1,19 +1,20 @@
 #credit dena toh de ni dena toh mat de laadle ~ GPG
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 LOG_FILE_NAME = "bot.log"
 PORT = '8000'
-OWNER_ID = 6048003536
+OWNER_ID = 8741514787
 MSG_EFFECT = 5046509860389126442
 
 # BOT CONFIGURATION
 # ===========================
 
 # Telegram API Credentials (Get from https://my.telegram.org)
-API_ID = 27050683
-API_HASH = "013a5c0b1f2c320b98236cf212835d59"
-BOT_TOKEN = "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA"
+API_ID = 39185942
+API_HASH = "36bb0447e7986c4a81e17b7281980b44"
+BOT_TOKEN = "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg"
 
 # ===========================
 # DATABASE
@@ -74,6 +75,15 @@ URL_SHORTENERS = {
         'active': True
     }
 }
+
+# ===========================
+# PERMANENT LINK SYSTEM
+# ===========================
+
+# Permanent Link System - Works even if bot gets banned
+PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://xsagavercal.vercel.app/")
+WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Xeonstart")
 
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
