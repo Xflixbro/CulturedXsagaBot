@@ -3,7 +3,7 @@
 
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from helper.helper_func import encode, get_message_id
+from helper.helper_func import encode, get_message_id, generate_links
 from helper.font_converter import to_small_caps as sc
 
 @Client.on_message(filters.private & filters.command('batch'))
@@ -86,15 +86,32 @@ async def batch(client: Client, message: Message):
     # Hybrid Token for Batch Range
     try:
         token = await client.mongodb.create_file_token(f_channel_id, f_msg_id, is_batch=True, end_msg_id=s_msg_id)
-        link = f"https://t.me/{client.username}?start={token}"
+        telegram_link, permanent_link = generate_links(token, client.username)
     except Exception as e:
         print(f"Token creation failed for batch: {e}")
         string = f"get-{f_msg_id * abs(f_channel_id)}-{s_msg_id * abs(f_channel_id)}"
         base64_string = await encode(string)
-        link = f"https://t.me/{client.username}?start={base64_string}"
-        
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
-    await second_response.reply_text(f"{info_text}<b>{sc('here is your link')}</b>\n\n<code>{link}</code>", quote=True, reply_markup=reply_markup)
+        telegram_link, permanent_link = generate_links(base64_string, client.username)
+    
+    # Build response with blue clickable links
+    response_text = f"{info_text}<b>{sc('here is your link')}</b>\n\n"
+    
+    # Telegram link - Blue and clickable
+    response_text += f'<a href="{telegram_link}" style="color: #1e90ff; text-decoration: underline;">🔗 {sc("Telegram Link")}</a>\n\n'
+    response_text += f'<code>{telegram_link}</code>\n\n'
+    
+    # Permanent link if available - Blue and clickable
+    if permanent_link:
+        response_text += f'<a href="{permanent_link}" style="color: #1e90ff; text-decoration: underline;">🌐 {sc("Permanent Link")}</a>\n\n'
+        response_text += f'<code>{permanent_link}</code>\n\n'
+    
+    # Share buttons
+    buttons = [[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={telegram_link}')]]
+    if permanent_link:
+        buttons.append([InlineKeyboardButton(f"🌐 {sc('share permanent')}", url=f'https://telegram.me/share/url?url={permanent_link}')])
+    
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await second_response.reply_text(response_text, quote=True, reply_markup=reply_markup, disable_web_page_preview=False)
 
 
 @Client.on_message(filters.private & filters.command('rbatch'))
@@ -178,16 +195,34 @@ async def restricted_batch(client: Client, message: Message):
     # Hybrid Token for Restricted Batch Range
     try:
         token = await client.mongodb.create_file_token(f_channel_id, f_msg_id, is_batch=True, end_msg_id=s_msg_id, restricted=True)
-        link = f"https://t.me/{client.username}?start={token}"
+        telegram_link, permanent_link = generate_links(token, client.username)
     except Exception as e:
         print(f"Token creation failed for restricted batch: {e}")
         # Fallback: use rbatch_ prefix
         batch_id = f"rbatch_{f_msg_id}_{s_msg_id}_{abs(f_channel_id)}"
-        link = f"https://t.me/{client.username}?start={batch_id}"
-        
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
-    reply_text = f"{info_text}<b>{sc('here is your restricted batch link')}</b>\n\n<code>{link}</code>\n\n<i>{sc('non-premium users cannot forward or save files from this batch')}</i>"
-    await second_response.reply_text(reply_text, quote=True, reply_markup=reply_markup)
+        telegram_link, permanent_link = generate_links(batch_id, client.username)
+    
+    # Build response with blue clickable links
+    response_text = f"{info_text}<b>{sc('here is your restricted batch link')}</b>\n\n"
+    
+    # Telegram link - Blue and clickable
+    response_text += f'<a href="{telegram_link}" style="color: #1e90ff; text-decoration: underline;">🔗 {sc("Telegram Link")}</a>\n\n'
+    response_text += f'<code>{telegram_link}</code>\n\n'
+    
+    # Permanent link if available - Blue and clickable
+    if permanent_link:
+        response_text += f'<a href="{permanent_link}" style="color: #1e90ff; text-decoration: underline;">🌐 {sc("Permanent Link")}</a>\n\n'
+        response_text += f'<code>{permanent_link}</code>\n\n'
+    
+    response_text += f"\n<i>{sc('non-premium users cannot forward or save files from this batch')}</i>"
+    
+    # Share buttons
+    buttons = [[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={telegram_link}')]]
+    if permanent_link:
+        buttons.append([InlineKeyboardButton(f"🌐 {sc('share permanent')}", url=f'https://telegram.me/share/url?url={permanent_link}')])
+    
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await second_response.reply_text(response_text, quote=True, reply_markup=reply_markup, disable_web_page_preview=False)
 
 
 @Client.on_message(filters.private & filters.command('genlink'))
@@ -200,7 +235,7 @@ async def link_generator(client: Client, message: Message):
     while True:
         try:
             ask_msg = await message.reply(f"{sc('forward message from the db channel (with quotes)')}..\n{sc('or send the db channel post link')}", reply_markup=cancel_btn)
-            channel_message = await client.listen(chat_id = message.from_user.id, filters=filters.user(message.from_user.id), timeout=60)
+            channel_message = await client.listen(chat_id=message.from_user.id, filters=filters.user(message.from_user.id), timeout=60)
         except:
             return
             
@@ -235,19 +270,33 @@ async def link_generator(client: Client, message: Message):
         
     try:
         token = await client.mongodb.create_file_token(channel_id, msg_id)
-        link = f"https://t.me/{client.username}?start={token}"
+        telegram_link, permanent_link = generate_links(token, client.username)
     except:
         base64_string = await encode(f"get-{msg_id * abs(channel_id)}")
-        link = f"https://t.me/{client.username}?start={base64_string}"
-        
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
+        telegram_link, permanent_link = generate_links(base64_string, client.username)
     
-    text = ""
+    # Build response with blue clickable links
+    response_text = ""
     if file_name:
-        text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
-    text += f"<b>{sc('here is your link')}</b>\n\n<code>{link}</code>"
+        response_text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
+    response_text += f"<b>{sc('here is your link')}</b>\n\n"
     
-    await channel_message.reply_text(text, quote=True, reply_markup=reply_markup)
+    # Telegram link - Blue and clickable
+    response_text += f'<a href="{telegram_link}" style="color: #1e90ff; text-decoration: underline;">🔗 {sc("Telegram Link")}</a>\n\n'
+    response_text += f'<code>{telegram_link}</code>\n\n'
+    
+    # Permanent link if available - Blue and clickable
+    if permanent_link:
+        response_text += f'<a href="{permanent_link}" style="color: #1e90ff; text-decoration: underline;">🌐 {sc("Permanent Link")}</a>\n\n'
+        response_text += f'<code>{permanent_link}</code>\n\n'
+    
+    # Share buttons
+    buttons = [[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={telegram_link}')]]
+    if permanent_link:
+        buttons.append([InlineKeyboardButton(f"🌐 {sc('share permanent')}", url=f'https://telegram.me/share/url?url={permanent_link}')])
+    
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await channel_message.reply_text(response_text, quote=True, reply_markup=reply_markup, disable_web_page_preview=False)
 
 
 @Client.on_message(filters.private & filters.command('rgenlink'))
@@ -297,22 +346,37 @@ async def restricted_link_generator(client: Client, message: Message):
     # Generate restricted token
     try:
         token = await client.mongodb.create_file_token(channel_id, msg_id, restricted=True)
-        link = f"https://t.me/{client.username}?start={token}"
+        telegram_link, permanent_link = generate_links(token, client.username)
     except:
         # Fallback: use rget- prefix in base64
         channel_id_clean = str(channel_id).replace("-100", "")
         base64_string = await encode(f"rget-{channel_id_clean}-{msg_id}")
-        link = f"https://t.me/{client.username}?start={base64_string}"
-        
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
+        telegram_link, permanent_link = generate_links(base64_string, client.username)
     
-    text = ""
+    # Build response with blue clickable links
+    response_text = ""
     if file_name:
-        text += f"<blockquote><b>🔒 {sc('restricted')} - {file_name}</b></blockquote>\n\n"
-    text += f"<b>{sc('here is your restricted link')}</b>\n\n<code>{link}</code>\n\n"
-    text += f"<i>{sc('non-premium users cannot forward or save this file')}</i>"
+        response_text += f"<blockquote><b>🔒 {sc('restricted')} - {file_name}</b></blockquote>\n\n"
+    response_text += f"<b>{sc('here is your restricted link')}</b>\n\n"
     
-    await channel_message.reply_text(text, quote=True, reply_markup=reply_markup)
+    # Telegram link - Blue and clickable
+    response_text += f'<a href="{telegram_link}" style="color: #1e90ff; text-decoration: underline;">🔗 {sc("Telegram Link")}</a>\n\n'
+    response_text += f'<code>{telegram_link}</code>\n\n'
+    
+    # Permanent link if available - Blue and clickable
+    if permanent_link:
+        response_text += f'<a href="{permanent_link}" style="color: #1e90ff; text-decoration: underline;">🌐 {sc("Permanent Link")}</a>\n\n'
+        response_text += f'<code>{permanent_link}</code>\n\n'
+    
+    response_text += f"\n<i>{sc('non-premium users cannot forward or save this file')}</i>"
+    
+    # Share buttons
+    buttons = [[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={telegram_link}')]]
+    if permanent_link:
+        buttons.append([InlineKeyboardButton(f"🌐 {sc('share permanent')}", url=f'https://telegram.me/share/url?url={permanent_link}')])
+    
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await channel_message.reply_text(response_text, quote=True, reply_markup=reply_markup, disable_web_page_preview=False)
 
 
 @Client.on_message(filters.private & (filters.document | filters.video | filters.audio) & ~filters.command(["start", "batch", "rbatch", "genlink", "rgenlink"]))
@@ -359,20 +423,34 @@ async def single_file_gen_handler(client: Client, message: Message):
             
         try:
             token = await client.mongodb.create_file_token(channel_id, msg_id)
-            link = f"https://t.me/{client.username}?start={token}"
+            telegram_link, permanent_link = generate_links(token, client.username)
         except Exception as e:
             print(f"Token creation failed: {e}")
             base64_string = await encode(f"get-{msg_id * abs(channel_id)}")
-            link = f"https://t.me/{client.username}?start={base64_string}"
+            telegram_link, permanent_link = generate_links(base64_string, client.username)
         
-        reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={link}')]])
-        
-        text = ""
+        # Build response with blue clickable links
+        response_text = ""
         if file_name:
-             text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
-        text += f"<b>{sc('here is your link')}</b>\n\n<code>{link}</code>"
+            response_text += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
+        response_text += f"<b>{sc('here is your link')}</b>\n\n"
         
-        await msg.edit_text(text, reply_markup=reply_markup)
+        # Telegram link - Blue and clickable
+        response_text += f'<a href="{telegram_link}" style="color: #1e90ff; text-decoration: underline;">🔗 {sc("Telegram Link")}</a>\n\n'
+        response_text += f'<code>{telegram_link}</code>\n\n'
+        
+        # Permanent link if available - Blue and clickable
+        if permanent_link:
+            response_text += f'<a href="{permanent_link}" style="color: #1e90ff; text-decoration: underline;">🌐 {sc("Permanent Link")}</a>\n\n'
+            response_text += f'<code>{permanent_link}</code>\n\n'
+        
+        # Share buttons
+        buttons = [[InlineKeyboardButton(f"🔁 {sc('share url')}", url=f'https://telegram.me/share/url?url={telegram_link}')]]
+        if permanent_link:
+            buttons.append([InlineKeyboardButton(f"🌐 {sc('share permanent')}", url=f'https://telegram.me/share/url?url={permanent_link}')])
+        
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await msg.edit_text(response_text, reply_markup=reply_markup, disable_web_page_preview=False)
         
     except Exception as e:
         print(f"Error in single_file_gen: {e}")
