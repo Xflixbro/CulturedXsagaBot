@@ -1,9 +1,9 @@
  [
     {
         "session": "ses1",
-        "token": "7975216525:AAFQCGlu_55OCUAFc0M47h-ytVq9UHugjQA",
-        "api_id": "27050683",
-        "api_hash": "013a5c0b1f2c320b98236cf212835d59",
+        "token": "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg",
+        "api_id": "39185942",
+        "api_hash": "36bb0447e7986c4a81e17b7281980b44",
         "workers": 8,
         "db_uri": "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
         "db_name": "CORNXVILLA",
@@ -19,8 +19,8 @@
             "FSUB_PHOTO": ""
         },
         "admins": [
-            123456789,
-            987654321
+            821215952,
+            8365451390
         ],
         "disable_btn": true,
         "protect": false,
