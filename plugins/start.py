@@ -417,7 +417,7 @@ async def start_command(client: Client, message: Message):
             await client.send_chat_action(message.chat.id, ChatAction.CHOOSE_STICKER)
             await asyncio.sleep(0.6)
             sticker_msg = await message.reply_sticker(sticker_id)
-            await asyncio.sleep(0.6)
+            await asyncio.sleep(2.5)
             await sticker_msg.delete()
         except Exception as e:
             print(f"Error sending sticker: {e}")
