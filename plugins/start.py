@@ -7,12 +7,24 @@ from helper.enhanced_credit_db import EnhancedCreditDB
 from helper.font_converter import to_small_caps as sc
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.enums import ChatAction
 import humanize
 import secrets
 import json
 import asyncio
+import random
 
 from plugins.others import home_buttons, home_buttons_admin
+
+# ========== EMOJI EFFECTS CONSTANTS ==========
+STICKER_ID = "CAACAgUAAxkBAAIE8mgq9m8MiaFWYUeppQiXveQBAZaYAAKrBAACvu-4V0dQs1WLoficHgQ"
+EMOJI_MODE = True
+REACTIONS = ["🔥", "🎉"]
+MESSAGE_EFFECT_IDS = [
+    5104841245755180586,  # 🔥
+    5046509860389126442,  # 🎉
+]
+# =============================================
 
 try:
     with open("setup.json", "r") as f:
@@ -385,11 +397,9 @@ async def start_command(client: Client, message: Message):
                 user_id,
                 f"<b>⚠️ {sc('file will be deleted in')} {humanize.naturaldelta(client.auto_del)}.</b>"
             )
-            # Only add files and restricted warning to delete list (NOT the "Time is over" message)
             all_msgs_to_delete = yugen_msgs.copy()
             if restricted_warning_msg:
                 all_msgs_to_delete.append(restricted_warning_msg)
-            # Pass warning separately - delete_files will edit it, not delete it
             asyncio.create_task(delete_files(all_msgs_to_delete, client, warning, text))
         elif not yugen_msgs:
             await client.send_message(
@@ -398,13 +408,57 @@ async def start_command(client: Client, message: Message):
             )
         return
 
-    # ---------------- NORMAL /start UI ----------------
+    # ======================================================================
+    # ---------------- NORMAL /start UI (WITH EMOJI ANIMATIONS) ------------
+    # ======================================================================
+
+    # Delete the user's command message
+    try:
+        await message.delete()
+    except:
+        pass
+
+    # Emoji reaction on the start command
+    if EMOJI_MODE:
+        try:
+            await message.react(emoji=random.choice(REACTIONS), big=True)
+        except Exception as e:
+            print(f"Error sending emoji reaction: {e}")
+
+    # Sparkles typing intro & lightning transition
+    try:
+        await client.send_chat_action(message.chat.id, ChatAction.TYPING)
+        await asyncio.sleep(0.8)
+        m = await message.reply_text("✨ ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ᴍᴀɢɪᴄ...")
+        await asyncio.sleep(0.3)
+
+        await client.send_chat_action(message.chat.id, ChatAction.TYPING)
+        await m.edit_text("⚡ ᴘᴏᴡᴇʀɪɴɢ ᴜᴘ ʏᴏᴜʀ ᴇxᴘᴇʀɪᴇɴᴄᴇ...")
+        await asyncio.sleep(0.3)
+        await m.delete()
+    except Exception as e:
+        print(f"Error with emoji animation: {e}")
+
+    # Sticker animation
+    if STICKER_ID:
+        try:
+            await client.send_chat_action(message.chat.id, ChatAction.CHOOSE_STICKER)
+            await asyncio.sleep(0.3)
+            sticker_msg = await message.reply_sticker(STICKER_ID)
+            await asyncio.sleep(0.3)
+            await sticker_msg.delete()
+        except Exception as e:
+            print(f"Error sending sticker: {e}")
+
+    # Final welcome message with random message effect
     if user_id in client.admins:
         markup = home_buttons_admin()
     else:
         markup = home_buttons()
     
     photo = client.messages.get("START_PHOTO", "")
+    effect_id = random.choice(MESSAGE_EFFECT_IDS) if MESSAGE_EFFECT_IDS else None
+
     if photo:
         await client.send_photo(
             chat_id=message.chat.id,
@@ -416,7 +470,8 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=markup
+            reply_markup=markup,
+            message_effect_id=effect_id
         )
     else:
         await client.send_message(
@@ -428,5 +483,6 @@ async def start_command(client: Client, message: Message):
                 mention=message.from_user.mention,
                 id=message.from_user.id
             ),
-            reply_markup=markup
+            reply_markup=markup,
+            message_effect_id=effect_id
         )
