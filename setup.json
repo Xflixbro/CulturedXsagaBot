@@ -1,11 +1,11 @@
  [
     {
         "session": "ses1",
-        "token": "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg",
+        "token": "8955831474:AAFzk-lSjJcje1ZJ5hgoFceCFSs4AMj4Xdk",
         "api_id": "39185942",
         "api_hash": "36bb0447e7986c4a81e17b7281980b44",
         "workers": 8,
-        "db_uri": "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+        "db_uri": "mongodb+srv://eonxfstBotv1:eonxfstBotv1@cluster0.qpkmqq8.mongodb.net/?appName=Cluster0",
         "db_name": "CORNXVILLA",
         "fsubs": [],
         "db": -1002162795137,
