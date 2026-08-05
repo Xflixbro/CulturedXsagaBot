@@ -14,14 +14,14 @@ MSG_EFFECT = 5046509860389126442
 # Telegram API Credentials (Get from https://my.telegram.org)
 API_ID = 39185942
 API_HASH = "36bb0447e7986c4a81e17b7281980b44"
-BOT_TOKEN = "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg"
+BOT_TOKEN = "8955831474:AAFzk-lSjJcje1ZJ5hgoFceCFSs4AMj4Xdk"
 
 # ===========================
 # DATABASE
 # ===========================
 
 # MongoDB Connection String
-DATABASE_URI = "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_URI = "mongodb+srv://eonxfstBotv1:eonxfstBotv1@cluster0.qpkmqq8.mongodb.net/?appName=Cluster0"
 DATABASE_NAME = "CORNXVILLA"
 
 # ===========================
@@ -81,7 +81,7 @@ URL_SHORTENERS = {
 # ===========================
 
 # Permanent Link System - Works even if bot gets banned
-PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
+PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "False") == "True"
 WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://xsagavercal.vercel.app/")
 WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 
