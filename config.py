@@ -81,7 +81,7 @@ URL_SHORTENERS = {
 # ===========================
 
 # Permanent Link System - Works even if bot gets banned
-PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "False") == "True"
+PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
 WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://xsagavercal.vercel.app/")
 WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 
