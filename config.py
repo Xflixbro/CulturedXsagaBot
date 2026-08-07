@@ -21,7 +21,7 @@ BOT_TOKEN = "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg"
 # ===========================
 
 # MongoDB Connection String
-DATABASE_URI = "mongodb+srv://FileStoreXflixBot1:FileStoreXflixBot1@cluster0.zd123bj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_URI = "mongodb+srv://eonxstBotv1:eonxstBotv1@cluster0.svu9vwp.mongodb.net/?appName=Cluster0"
 DATABASE_NAME = "CORNXVILLA"
 
 # ===========================
