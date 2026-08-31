@@ -15,6 +15,7 @@ import asyncio
 import random
 
 from plugins.others import home_buttons, home_buttons_admin
+from config import BYPASS_ATTEMPT_MEDIA
 
 # ========== EMOJI EFFECTS CONSTANTS ==========
 STICKER_IDS = [
@@ -36,6 +37,47 @@ try:
 except:
     credit_config = {}
 
+async def send_bypass_message(client: Client, message: Message):
+    """Send a rich bypass warning with media (video sent as animation/GIF)."""
+    media_urls = BYPASS_ATTEMPT_MEDIA
+    if isinstance(media_urls, str):
+        media_urls = media_urls.split()
+    media_urls = [u.strip() for u in media_urls if u.strip()]
+
+    # New formatted caption with two separate blockquotes
+    caption = (
+        "<blockquote><b>🚨 Bʏᴘᴀss Aᴛᴛᴇᴍᴘᴛ Dᴇᴛᴇᴄᴛᴇᴅ! 🚨</b></blockquote>\n"
+        "<blockquote><b>» ⚠️ ᴡᴀʀɴɪɴɢ...!!!ʏᴏᴜ ᴍᴜsᴛ ʀᴇsᴏʟᴠᴇ ᴛʜᴇ ʟɪɴᴋ ᴛᴏ ᴀᴄᴄᴇss ᴛʜᴇ ғɪʟᴇ. ɴᴏ sʜᴏʀᴛᴄᴜᴛs, ɴᴏ ᴛʀɪᴄᴋs! ᴀɴʏ ᴀᴛᴛᴇᴍᴘᴛ ᴛᴏ ʙʏᴘᴀss ᴛʜᴇ sʏsᴛᴇᴍ ᴡɪʟʟ ᴛʀɪɢɢᴇʀ ᴀɴ ɪɴsᴛᴀɴᴛ ʙᴀɴ! 🚫\nɴᴏᴡ ʙᴇ ᴀ ɢᴏᴏᴅ ʙᴏʏ ᴀɴᴅ ꜱᴏʟᴠᴇ ɪᴛ ᴀɢᴀɪɴ, ᴀɴᴅ ᴛʜɪꜱ ᴛɪᴍᴇ ᴅᴏɴᴛ ɢᴇᴛ ꜱᴍᴀʀᴛ !!</b></blockquote>"
+    )
+
+    if media_urls:
+        media_url = random.choice(media_urls)
+        ext = media_url.split('.')[-1].lower()
+        
+        try:
+            if ext in ('jpg', 'jpeg', 'png', 'webp'):
+                # Send as photo
+                await client.send_photo(
+                    chat_id=message.chat.id,
+                    photo=media_url,
+                    caption=caption
+                )
+            elif ext in ('mp4', 'gif', 'webm'):
+                # Send as animation (appears as GIF in Telegram)
+                await client.send_animation(
+                    chat_id=message.chat.id,
+                    animation=media_url,
+                    caption=caption
+                )
+            else:
+                # Unknown format - fallback to text
+                await message.reply(caption)
+        except Exception as e:
+            # Fallback to text-only if media fails
+            await message.reply(caption)
+    else:
+        # No media configured, send plain text
+        await message.reply(caption)
 
 @Client.on_message(filters.command('start') & filters.private)
 @force_sub
@@ -121,11 +163,10 @@ async def start_command(client: Client, message: Message):
                                     f"<blockquote><b>{sc('contact admin if you think this is a mistake')}</b></blockquote>"
                                 )
                                 return
-                        await message.reply(
-                            f"<blockquote>⚠️ <b>{sc('bypass detected')}</b></blockquote>\n"
-                            f"<blockquote><b>{sc('how many times have i told you, dont try to outsmart your dad')}🖕</b></blockquote>\n"
-                            f"<blockquote><b>{sc('now be a good boy and solve it again, and this time dont get smart !!')}</b></blockquote>"
-                        )
+                        
+                        # Send the new bypass message with media
+                        await send_bypass_message(client, message)
+                        
                         bypass_count = await client.mongodb.get_bypass_count(user_id)
                         await client.send_message(
                             client.owner,
