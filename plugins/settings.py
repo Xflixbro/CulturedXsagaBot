@@ -7,8 +7,73 @@ from pyrogram.errors.pyromod import ListenerTimeout
 from pyrogram.enums import ChatMemberStatus
 from config import OWNER_ID, URL_SHORTENERS
 import humanize
+import re
 from helper.font_converter import to_small_caps as sc
 from helper.helper_func import is_bot_admin
+from datetime import datetime, timedelta
+
+
+# ===============================
+#  PARSE DURATION HELPER
+# ===============================
+def parse_duration(duration_str: str):
+    """Parse duration string and return (expire_date, readable_text)"""
+    from datetime import datetime, timedelta
+    
+    # If '0' or 'lifetime' -> lifetime
+    if duration_str == '0' or duration_str == 'lifetime':
+        return None, "Lifetime"
+    
+    total_seconds = 0
+    
+    # Pattern: number followed by d (days), h (hours), m (minutes)
+    pattern = r'(\d+)([dhm])'
+    matches = re.findall(pattern, duration_str)
+    
+    if not matches:
+        # Try parsing as plain number (assume days)
+        try:
+            days = int(duration_str)
+            if days > 0:
+                total_seconds = days * 24 * 3600
+                return datetime.now() + timedelta(seconds=total_seconds), f"{days} day{'s' if days > 1 else ''}"
+            return None, "Lifetime"
+        except:
+            return None, "Lifetime"
+    
+    days = 0
+    hours = 0
+    minutes = 0
+    
+    for value, unit in matches:
+        num = int(value)
+        if unit == 'd':
+            days += num
+        elif unit == 'h':
+            hours += num
+        elif unit == 'm':
+            minutes += num
+    
+    # Build readable text
+    parts = []
+    if days > 0:
+        parts.append(f"{days} day{'s' if days > 1 else ''}")
+    if hours > 0:
+        parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
+    if minutes > 0:
+        parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+    
+    readable = " ".join(parts)
+    
+    # Calculate total seconds for expiry
+    total_seconds = (days * 24 * 3600) + (hours * 3600) + (minutes * 60)
+    
+    if total_seconds <= 0:
+        return None, "Lifetime"
+    
+    expire_date = datetime.now() + timedelta(seconds=total_seconds)
+    return expire_date, readable
+
 
 @Client.on_callback_query(filters.regex("^settings$"))
 async def settings(client, query):
@@ -45,6 +110,7 @@ async def settings(client, query):
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+
 @Client.on_callback_query(filters.regex("^fsub$"))
 async def fsub(client, query):
     if query.from_user.id not in client.admins:
@@ -61,6 +127,7 @@ __Use the appropriate button below to add or remove a force subscription channel
     )
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
+
 
 @Client.on_callback_query(filters.regex("^add_fsub$"))
 async def add_fsub(client: Client, query: CallbackQuery):
@@ -98,6 +165,7 @@ async def add_fsub(client: Client, query: CallbackQuery):
     except Exception as e:
         return await ask_channel_info.reply(f"**Error:** `{e}`")
     
+
 @Client.on_callback_query(filters.regex('^rm_fsub$'))
 async def rm_fsub(client: Client, query: CallbackQuery):
     await query.answer()
@@ -112,6 +180,7 @@ async def rm_fsub(client: Client, query: CallbackQuery):
         return await ask_channel_info.reply(f"__Channel with id: `{channel_id}` has been removed as a force sub channel!!__")
     except Exception as e:
         return await ask_channel_info.reply(f"**Error:** `{e}`")
+
 
 @Client.on_callback_query(filters.regex("^db_channels$"))
 async def db_channels(client, query):
@@ -145,6 +214,7 @@ async def db_channels(client, query):
         [InlineKeyboardButton(f'◂ {sc("back")}', 'settings')]
     ])
     await query.message.edit_text(msg, reply_markup=reply_markup)
+
 
 @Client.on_callback_query(filters.regex("^add_db_channel$"))
 async def add_db_channel_cb(client, query):
@@ -253,6 +323,7 @@ _Timeout: 60s_
     except ListenerTimeout:
         await query.message.edit_text("**⌚ Timeout!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
 
+
 @Client.on_callback_query(filters.regex("^toggle_multi_db$"))
 async def toggle_multi_db_cb(client, query):
     if query.from_user.id not in client.admins:
@@ -262,6 +333,7 @@ async def toggle_multi_db_cb(client, query):
     status_text = sc('enabled') if new_status else sc('disabled')
     await query.answer(f"✅ {sc('multi-db system')} {status_text}!", show_alert=True)
     return await db_channels(client, query)
+
 
 @Client.on_callback_query(filters.regex("^premium_users_settings$"))
 async def premium_users_settings(client, query):
@@ -308,6 +380,7 @@ async def premium_users_settings(client, query):
     
     await query.message.edit_text(msg, reply_markup=reply_markup)
 
+
 @Client.on_callback_query(filters.regex("^view_all_premium$"))
 async def view_all_premium(client, query):
     if query.from_user.id not in client.admins:
@@ -344,63 +417,101 @@ async def view_all_premium(client, query):
     
     await query.message.edit_text(msg, reply_markup=reply_markup)
 
+
 @Client.on_callback_query(filters.regex("^add_premium_user$"))
 async def add_premium_user_cb(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
+
     msg = f"""<blockquote>**➕ {sc('add premium user')}:**</blockquote>
 
-{sc('send user id and days separated by space')}
+{sc('send user id and duration')}
 
-**{sc('format')}:** `user_id days`
-**{sc('example')}:** `123456789 30`
-
-__{sc('for lifetime premium, use')} 0 {sc('days')}__
+**{sc('format')}:** `user_id duration`
+**{sc('examples')}:**
+`123456789 30d` - 30 {sc('days')}
+`123456789 12h` - 12 {sc('hours')}
+`123456789 45m` - 45 {sc('minutes')}
+`123456789 7d12h` - 7 {sc('days')} 12 {sc('hours')}
+`123456789 0` - {sc('lifetime')}
 
 _{sc('timeout')}: 60s_
 """
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
-    
+
     try:
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
-        
         parts = res.text.strip().split()
         if len(parts) < 2:
             await query.message.edit_text(f"❌ {sc('invalid format')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
             return
-        
+
         try:
             user_id = int(parts[0])
-            days = int(parts[1])
-        except:
-            await query.message.edit_text(f"❌ {sc('invalid user id or days')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+        except ValueError:
+            await query.message.edit_text(f"❌ {sc('invalid user id')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
             return
+
+        duration_str = parts[1].lower()
         
-        from datetime import datetime, timedelta
-        expire_date = None if days == 0 else datetime.now() + timedelta(days=days)
+        # Fetch user info for mention
+        try:
+            user = await client.get_users(user_id)
+            user_mention = user.mention
+        except Exception:
+            user_mention = f"<a href='tg://user?id={user_id}'>{user_id}</a>"
+
+        # Parse duration
+        expire_date, duration_text = parse_duration(duration_str)
         
         await client.mongodb.add_premium(user_id, expire_date)
-        
-        duration = sc('lifetime') if days == 0 else f"{days} {sc('days')}"
-        await query.message.edit_text(
-            f"✅ **{sc('premium added')}!**\n\n"
-            f"**{sc('user id')}:** `{user_id}`\n"
-            f"**{sc('duration')}:** {duration}",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]])
+
+        # Admin confirmation with mention
+        admin_reply = (
+            f"🎉 Premium activated successfully! 🚀\n\n"
+            f"👤 User: {user_mention}\n"
+            f"⚡ User ID: <code>{user_id}</code>\n"
+            f"⏳ Premium Access Duration: {duration_text}\n"
         )
-        
+        if expire_date:
+            # Convert to Kolkata Time (IST - UTC+5:30)
+            kolkata_time = expire_date + timedelta(hours=5, minutes=30)
+            exp_date_str = kolkata_time.strftime("%d-%m-%Y")
+            exp_time_str = kolkata_time.strftime("%I:%M:%S %p IST")
+            admin_reply += f"⌛️ Expiry Date: {exp_date_str}\n"
+            admin_reply += f"⏱️ Expiry Time: {exp_time_str} (Kolkata)"
+        else:
+            admin_reply += "♾️ <b>Lifetime Premium</b>"
+
+        await query.message.edit_text(
+            admin_reply,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]),
+            disable_web_page_preview=True
+        )
+
+        # User welcome message (without benefits)
+        user_reply = (
+            f"💎 PREMIUM ACTIVE\n"
+            f"🎉 You are now a PREMIUM USER!\n"
+            f"⏳ Duration: {duration_text}\n"
+        )
+        if expire_date:
+            kolkata_time = expire_date + timedelta(hours=5, minutes=30)
+            exp_date_str = kolkata_time.strftime("%d-%m-%Y")
+            exp_time_str = kolkata_time.strftime("%I:%M:%S %p IST")
+            user_reply += f"📅 Expiry: {exp_date_str} {exp_time_str} (Kolkata)\n"
+        else:
+            user_reply += "📅 Expiry: ♾️ Lifetime\n"
+
         try:
-            await client.send_message(
-                user_id,
-                f"🎉 **{sc('you are now premium')}!**\n\n"
-                f"**{sc('duration')}:** {duration}"
-            )
+            await client.send_message(user_id, user_reply)
         except:
             pass
-            
+
     except ListenerTimeout:
         await query.message.edit_text(f"**⌚ {sc('timeout')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+
 
 @Client.on_callback_query(filters.regex("^remove_premium_user$"))
 async def remove_premium_user_cb(client, query):
@@ -417,7 +528,7 @@ async def remove_premium_user_cb(client, query):
 _{sc('timeout')}: 60s_
 """
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
-    
+
     try:
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
         
@@ -476,6 +587,7 @@ __{sc('Turning this OFF will stop those annoying messages!')}__
     ])
     await query.message.edit_text(msg, reply_markup=reply_markup)
 
+
 @Client.on_callback_query(filters.regex("^toggle_auto_batch$"))
 async def toggle_auto_batch(client, query):
     if query.from_user.id not in client.admins:
@@ -485,6 +597,7 @@ async def toggle_auto_batch(client, query):
     await client.mongodb.set_bot_config('auto_batch_enabled', not current)
     await query.answer(f"Auto-Batch {'Disabled' if current else 'Enabled'}!")
     return await auto_batch_settings(client, query)
+
 
 @Client.on_callback_query(filters.regex("^toggle_batch_mode$"))
 async def toggle_batch_mode(client, query):
@@ -496,6 +609,7 @@ async def toggle_batch_mode(client, query):
     await client.mongodb.set_bot_config('auto_batch_mode', new_mode)
     await query.answer(f"Switched to {new_mode.title()} Mode!")
     return await auto_batch_settings(client, query)
+
 
 @Client.on_callback_query(filters.regex("^admins$"))
 async def admins(client, query):
@@ -512,6 +626,7 @@ __Use the appropriate button below to add or remove an admin based on your needs
     )
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
+
 
 @Client.on_callback_query(filters.regex("^add_admin$"))
 async def add_new_admins(client, query):
@@ -531,6 +646,7 @@ async def add_new_admins(client, query):
     await admins(client, query)
     return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been promoted!!__")
     
+
 @Client.on_callback_query(filters.regex("^rm_admin$"))
 async def remove_admins(client, query):
     await query.answer()
@@ -550,6 +666,7 @@ async def remove_admins(client, query):
         return await ids_msg.reply(f"Error: {e}")
     await admins(client, query)
     return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been removed!!__")
+
 
 @Client.on_callback_query(filters.regex("^photos$"))
 async def photos(client, query):
@@ -583,6 +700,7 @@ __Use the appropriate button below to add or remove any admin based on your need
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+
 @Client.on_callback_query(filters.regex("^protect$"))
 async def protect(client, query):
     if query.from_user.id not in client.admins:
@@ -590,6 +708,7 @@ async def protect(client, query):
         return
     client.protect = False if client.protect else True
     return await settings(client, query)
+
 
 @Client.on_callback_query(filters.regex("^url_shorteners$"))
 async def url_shorteners(client, query):
@@ -623,6 +742,7 @@ async def url_shorteners(client, query):
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+
 @Client.on_callback_query(filters.regex("^auto_del$"))
 async def auto_del(client, query):
     if query.from_user.id not in client.admins:
@@ -651,6 +771,7 @@ __Enter new integer value of auto delete timer, keep 0 to disable auto delete an
     except ListenerTimeout:
         return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
 
+
 @Client.on_callback_query(filters.regex("^texts$"))
 async def texts(client, query):
     if query.from_user.id not in client.admins:
@@ -674,6 +795,7 @@ async def texts(client, query):
     await query.message.edit_text(msg, reply_markup=reply_markup)
     return
 
+
 @Client.on_callback_query(filters.regex('^rm_start_photo$'))
 async def rm_start_photo(client, query):
     if query.from_user.id not in client.admins:
@@ -683,6 +805,7 @@ async def rm_start_photo(client, query):
     await query.answer()
     await photos(client, query)
 
+
 @Client.on_callback_query(filters.regex('^rm_fsub_photo$'))
 async def rm_fsub_photo(client, query):
     if query.from_user.id not in client.admins:
@@ -691,6 +814,7 @@ async def rm_fsub_photo(client, query):
     client.messages['FSUB_PHOTO'] = ''
     await query.answer()
     await photos(client, query)
+
 
 @Client.on_callback_query(filters.regex("^add_start_photo$"))
 async def add_start_photo(client, query):
@@ -717,6 +841,7 @@ __Enter new link of start image or send the photo, or wait for 60 second timeout
             return await query.message.edit_text("**Invalid Photo or Link format!!**\n__If you're sending the link of any image it must starts with either 'http' or 'https'!__", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
     except ListenerTimeout:
         return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+
 
 @Client.on_callback_query(filters.regex("^add_fsub_photo$"))
 async def add_fsub_photo(client, query):
@@ -932,6 +1057,7 @@ async def rm_shortener(client, query):
     except ListenerTimeout:
         return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
 
+
 @Client.on_callback_query(filters.regex("^global_token_toggle$"))
 async def global_token_toggle(client, query):
     if query.from_user.id not in client.admins:
@@ -942,6 +1068,7 @@ async def global_token_toggle(client, query):
     await client.mongodb.set_bot_config('token_verification_enabled', new_status)
     await query.answer(f"System {'Enabled' if new_status else 'Disabled'}!")
     return await url_shorteners(client, query)
+
 
 @Client.on_callback_query(filters.regex("^anti_bypass_settings$"))
 async def anti_bypass_settings(client, query):
@@ -969,6 +1096,7 @@ __{sc('This system prevents users from solving the shortener too quickly (skippi
     
     await query.message.edit_text(msg, reply_markup=reply_markup)
 
+
 @Client.on_callback_query(filters.regex("^toggle_bypass_check$"))
 async def toggle_bypass_check(client, query):
     if query.from_user.id not in client.admins:
@@ -978,6 +1106,7 @@ async def toggle_bypass_check(client, query):
     await client.mongodb.set_bot_config('bypass_check_enabled', not current)
     await query.answer(f"{sc('Anti-Bypass System')} {'Disabled' if current else 'Enabled'}!")
     return await anti_bypass_settings(client, query)
+
 
 @Client.on_callback_query(filters.regex("^set_bypass_timer$"))
 async def set_bypass_timer(client, query):
