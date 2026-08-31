@@ -9,6 +9,7 @@ from pyrogram.errors import UserNotParticipant, Forbidden, PeerIdInvalid, ChatAd
 from datetime import datetime, timedelta
 from pyrogram import errors
 from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
+from helper.font_converter import to_small_caps as sc
 
 async def shorten_url(long_url: str) -> str:
     """
@@ -250,9 +251,13 @@ def force_sub(func):
         for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
             status = statuses.get(channel_id, None)
             emoji = status_emojis.get(status, "❓")
-            status_of_user = "Joined" if emoji in ('✅', '🛡️', '👑') else "Not Joined"
-            c = c+1
-            channels_message += f"{c}. {emoji} <code>{channel_name}</code> - __{status_of_user}__\n"
+            # Check if user is joined (member, admin, or owner)
+            is_joined = status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
+            # Use small caps for status text with bold
+            status_text = f"<b>{sc('Joined')}</b>" if is_joined else f"<b>{sc('Not Joined')}</b>"
+            c += 1
+            # Format: number (bold), channel name (bold), status text (bold small caps), emoji at the end
+            channels_message += f"<b>{c}.</b> <b>{channel_name}</b> - {status_text} {emoji}\n"
             if timer > 0:
                 expire_time = datetime.now() + timedelta(minutes=timer)
                 invite = await client.create_chat_invite_link(
@@ -261,7 +266,7 @@ def force_sub(func):
                     creates_join_request=request
                 )
                 channel_link = invite.invite_link
-            if status not in {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}:
+            if not is_joined:
                 buttons.append(InlineKeyboardButton(channel_name, url=channel_link))
         
         # Add "Try Again" button if needed
