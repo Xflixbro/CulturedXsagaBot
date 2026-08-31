@@ -85,6 +85,14 @@ PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
 WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://xsagavercal.vercel.app/")
 WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 
+# BYPASS ATTEMPT MEDIA
+# ===========================
+# Media to display when a bypass attempt is detected.
+# Can be a single URL or multiple space-separated URLs.
+# Supported: images (jpg, jpeg, png, webp) and videos/animations (mp4, gif, webm).
+# Videos will be sent as animations (GIF-like) automatically.
+BYPASS_ATTEMPT_MEDIA = "https://videotourl.com/videos/1788160021118-5b825ba1-c273-4df3-9c10-1649b6c73ee7.mp4 https://i.postimg.cc/4ykP3SHc/IMG-20250927-131101-178.jpg"
+
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     formatter = logging.Formatter(
