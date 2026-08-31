@@ -7,7 +7,6 @@ from pyrogram.errors.pyromod import ListenerTimeout
 from pyrogram.enums import ChatMemberStatus
 from config import OWNER_ID, URL_SHORTENERS
 import humanize
-import re
 from helper.font_converter import to_small_caps as sc
 from helper.helper_func import is_bot_admin
 from datetime import datetime, timedelta
@@ -24,55 +23,43 @@ def parse_duration(duration_str: str):
     if duration_str == '0' or duration_str == 'lifetime':
         return None, "Lifetime"
     
-    total_seconds = 0
-    
-    # Pattern: number followed by d (days), h (hours), m (minutes)
-    pattern = r'(\d+)([dhm])'
-    matches = re.findall(pattern, duration_str)
-    
-    if not matches:
-        # Try parsing as plain number (assume days)
+    # Check if it ends with d, h, or m
+    if duration_str.endswith('d'):
         try:
-            days = int(duration_str)
+            days = int(duration_str[:-1])
             if days > 0:
-                total_seconds = days * 24 * 3600
-                return datetime.now() + timedelta(seconds=total_seconds), f"{days} day{'s' if days > 1 else ''}"
-            return None, "Lifetime"
+                expire_date = datetime.now() + timedelta(days=days)
+                return expire_date, f"{days} day{'s' if days > 1 else ''}"
         except:
-            return None, "Lifetime"
+            pass
     
-    days = 0
-    hours = 0
-    minutes = 0
+    elif duration_str.endswith('h'):
+        try:
+            hours = int(duration_str[:-1])
+            if hours > 0:
+                expire_date = datetime.now() + timedelta(hours=hours)
+                return expire_date, f"{hours} hour{'s' if hours > 1 else ''}"
+        except:
+            pass
     
-    for value, unit in matches:
-        num = int(value)
-        if unit == 'd':
-            days += num
-        elif unit == 'h':
-            hours += num
-        elif unit == 'm':
-            minutes += num
+    elif duration_str.endswith('m'):
+        try:
+            minutes = int(duration_str[:-1])
+            if minutes > 0:
+                expire_date = datetime.now() + timedelta(minutes=minutes)
+                return expire_date, f"{minutes} minute{'s' if minutes > 1 else ''}"
+        except:
+            pass
     
-    # Build readable text
-    parts = []
-    if days > 0:
-        parts.append(f"{days} day{'s' if days > 1 else ''}")
-    if hours > 0:
-        parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-    if minutes > 0:
-        parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-    
-    readable = " ".join(parts)
-    
-    # Calculate total seconds for expiry
-    total_seconds = (days * 24 * 3600) + (hours * 3600) + (minutes * 60)
-    
-    if total_seconds <= 0:
+    # Try parsing as plain number (assume days)
+    try:
+        days = int(duration_str)
+        if days > 0:
+            expire_date = datetime.now() + timedelta(days=days)
+            return expire_date, f"{days} day{'s' if days > 1 else ''}"
         return None, "Lifetime"
-    
-    expire_date = datetime.now() + timedelta(seconds=total_seconds)
-    return expire_date, readable
+    except:
+        return None, "Lifetime"
 
 
 @Client.on_callback_query(filters.regex("^settings$"))
@@ -80,23 +67,23 @@ async def settings(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**{sc(f'Settings of @{client.username}')}:**</blockquote>
-**{sc('Force Sub Channels')}:** `{len(client.fsub_dict)}`
-**{sc('Auto Delete Timer')}:** `{client.auto_del}`
-**{sc('Protect Content')}:** `{"True" if client.protect else "False"}`
-**{sc('Disable Button')}:** `{"True" if client.disable_btn else "False"}`
-**{sc('Reply Text')}:** `{client.reply_text if client.reply_text else 'None'}`
-**{sc('Admins')}:** `{len(client.admins)}`
-**{sc('Start Message')}:**
+    msg = f"""<b>{sc(f'Settings of @{client.username}')}:
+{sc('Force Sub Channels')}: <code>{len(client.fsub_dict)}</code>
+{sc('Auto Delete Timer')}: <code>{client.auto_del}</code>
+{sc('Protect Content')}: <code>{"True" if client.protect else "False"}</code>
+{sc('Disable Button')}: <code>{"True" if client.disable_btn else "False"}</code>
+{sc('Reply Text')}: <code>{client.reply_text if client.reply_text else 'None'}</code>
+{sc('Admins')}: <code>{len(client.admins)}</code>
+{sc('Start Message')}:
 <pre>{client.messages.get('START', 'Empty')}</pre>
-**{sc('Start Image')}:** `{bool(client.messages.get('START_PHOTO', ''))}`
-**{sc('Force Sub Message')}:**
+{sc('Start Image')}: <code>{bool(client.messages.get('START_PHOTO', ''))}</code>
+{sc('Force Sub Message')}:
 <pre>{client.messages.get('FSUB', 'Empty')}</pre>
-**{sc('Force Sub Image')}:** `{bool(client.messages.get('FSUB_PHOTO', ''))}`
-**{sc('About Message')}:**
+{sc('Force Sub Image')}: <code>{bool(client.messages.get('FSUB_PHOTO', ''))}</code>
+{sc('About Message')}:
 <pre>{client.messages.get('ABOUT', 'Empty')}</pre>
-**{sc('Reply Message')}:**
-<pre>{client.reply_text}</pre>
+{sc('Reply Message')}:
+<pre>{client.reply_text}</pre></b>
     """
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton('ꜰꜱᴜʙ ᴄʜᴀɴɴᴇʟꜱ', 'fsub'), InlineKeyboardButton('ᴀᴅᴍɪɴꜱ', 'admins')],
@@ -116,10 +103,10 @@ async def fsub(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Force Subscription Settings:**</blockquote>
-**Force Subscribe Channel IDs:** `{ {a for a in client.fsub_dict.keys()} }`
+    msg = f"""<b>Force Subscription Settings:
+Force Subscribe Channel IDs: <code>{ {a for a in client.fsub_dict.keys()} }</code>
 
-__Use the appropriate button below to add or remove a force subscription channel based on your needs!__
+Use the appropriate button below to add or remove a force subscription channel based on your needs!</b>
 """
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton('ᴀᴅᴅ ᴄʜᴀɴɴᴇʟ', 'add_fsub'), InlineKeyboardButton('ʀᴇᴍᴏᴠᴇ ᴄʜᴀɴɴᴇʟ', 'rm_fsub')],
@@ -132,16 +119,16 @@ __Use the appropriate button below to add or remove a force subscription channel
 @Client.on_callback_query(filters.regex("^add_fsub$"))
 async def add_fsub(client: Client, query: CallbackQuery):
     await query.answer()
-    ask_channel_info = await client.ask(query.from_user.id, "Send channel id(negative integer value), request boolean(yes/no/true/false), timers(integer without decimal)(to enable it keep it greator than 0 otherwise the invite link will not have any timer to invalidate it) seperated by a space in the next 60 seconds!\n<blockquote expandable>Eg: `-10089479289 yes 5`\n\n__It means `-10089479289` is the force sub channel id, `yes` means to enable request it means the link will be request link and only after user sends request to the channel bot will work for that user even if you do not accept his request or user is not a member, `5` means timer in minutes aftetr 5 minutes the invite link will be expired.__</blockquote>", filters=filters.text, timeout=60)
+    ask_channel_info = await client.ask(query.from_user.id, "<b>Send channel id(negative integer value), request boolean(yes/no/true/false), timers(integer without decimal)(to enable it keep it greator than 0 otherwise the invite link will not have any timer to invalidate it) seperated by a space in the next 60 seconds!\n<blockquote expandable>Eg: <code>-10089479289 yes 5</code>\n\nIt means <code>-10089479289</code> is the force sub channel id, <code>yes</code> means to enable request it means the link will be request link and only after user sends request to the channel bot will work for that user even if you do not accept his request or user is not a member, <code>5</code> means timer in minutes aftetr 5 minutes the invite link will be expired.</blockquote></b>", filters=filters.text, timeout=60)
     try:
         channel_info = ask_channel_info.text.split()
         channel_id, request, timer = channel_info
         channel_id = int(channel_id)
         if channel_id in client.fsub_dict.keys():
-            return await ask_channel_info.reply("**This channel id already exists in force sub list, remove it to change it's configuration!!**")
+            return await ask_channel_info.reply("<b>This channel id already exists in force sub list, remove it to change it's configuration!!</b>")
         val, res = await is_bot_admin(client, channel_id)
         if not val:
-            return await ask_channel_info.reply(f"**Error:** `{res}`")
+            return await ask_channel_info.reply(f"<b>Error: <code>{res}</code></b>")
         if request.lower() in ('true', 'on', 'yes'):
             request = True
         elif request.lower() in ('false', 'off', 'no'):
@@ -161,25 +148,25 @@ async def add_fsub(client: Client, query: CallbackQuery):
             link = chat_link.invite_link
             client.fsub_dict[channel_id] = [name, link, request, timer]
         await fsub(client, query)
-        return await ask_channel_info.reply(f"__Channel with name: `{name.strip()}` is added as a force sub channel!!__")
+        return await ask_channel_info.reply(f"<b>Channel with name: <code>{name.strip()}</code> is added as a force sub channel!!</b>")
     except Exception as e:
-        return await ask_channel_info.reply(f"**Error:** `{e}`")
+        return await ask_channel_info.reply(f"<b>Error: <code>{e}</code></b>")
     
 
 @Client.on_callback_query(filters.regex('^rm_fsub$'))
 async def rm_fsub(client: Client, query: CallbackQuery):
     await query.answer()
-    ask_channel_info = await client.ask(query.from_user.id, "Send channel id(negative integer value) in the next 60 seconds!", filters=filters.text, timeout=60)
+    ask_channel_info = await client.ask(query.from_user.id, "<b>Send channel id(negative integer value) in the next 60 seconds!</b>", filters=filters.text, timeout=60)
     try:
         channel_id = int(ask_channel_info.text)
         if channel_id not in client.fsub_dict.keys():
-            return await ask_channel_info.reply("**This channel id is not in force sub list!**")
+            return await ask_channel_info.reply("<b>This channel id is not in force sub list!</b>")
         
         client.fsub_dict.pop(channel_id)
         await fsub(client, query)
-        return await ask_channel_info.reply(f"__Channel with id: `{channel_id}` has been removed as a force sub channel!!__")
+        return await ask_channel_info.reply(f"<b>Channel with id: <code>{channel_id}</code> has been removed as a force sub channel!!</b>")
     except Exception as e:
-        return await ask_channel_info.reply(f"**Error:** `{e}`")
+        return await ask_channel_info.reply(f"<b>Error: <code>{e}</code></b>")
 
 
 @Client.on_callback_query(filters.regex("^db_channels$"))
@@ -192,19 +179,19 @@ async def db_channels(client, query):
     
     status = f"✅ {sc('enabled')}" if multi_db_enabled else f"❌ {sc('disabled')}"
     
-    msg = f"""<blockquote>**🗄️ {sc('multi-db channel settings')}:**</blockquote>
+    msg = f"""<b>🗄️ {sc('multi-db channel settings')}:
 
-**{sc('system status')}:** {status}
-**{sc('primary main db')}:** `{client.db.id if hasattr(client.db, 'id') else client.db}`
-**{sc('extra db channels')}:**
+{sc('system status')}: {status}
+{sc('primary main db')}: <code>{client.db.id if hasattr(client.db, 'id') else client.db}</code>
+{sc('extra db channels')}:
 """
     if channels:
         for ch in channels:
-            msg += f"• `{ch}`\n"
+            msg += f"• <code>{ch}</code>\n"
     else:
         msg += f"• _{sc('none')}_\n"
 
-    msg += f"\n__{sc('add extra channels to store files in multiple places')}!__"
+    msg += f"\n{sc('add extra channels to store files in multiple places')}!</b>"
     
     toggle_text = f"🔴 {sc('disable multi-db')}" if multi_db_enabled else f"🟢 {sc('enable multi-db')}"
     
@@ -223,10 +210,10 @@ async def add_db_channel_cb(client, query):
         return
 
     await query.message.edit_text(
-        "<blockquote>**➕ Add DB Channel**</blockquote>\n\n"
-        "Forward a message from the channel **OR** send the Channel ID.\n"
-        "Make sure the bot is **ADMIN** in that channel!\n\n"
-        "_Timeout: 60s_"
+        "<b>➕ Add DB Channel</b>\n\n"
+        "<b>Forward a message from the channel OR send the Channel ID.\n"
+        "Make sure the bot is ADMIN in that channel!\n\n"
+        "Timeout: 60s</b>"
     )
 
     try:
@@ -237,7 +224,7 @@ async def add_db_channel_cb(client, query):
         )
     except ListenerTimeout:
         return await query.message.edit_text(
-            "**⌚ Timeout!**",
+            "<b>⌚ Timeout!</b>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
@@ -253,8 +240,8 @@ async def add_db_channel_cb(client, query):
 
     if not channel_id:
         return await query.message.edit_text(
-            "**❌ Invalid Channel ID!**\n"
-            "Make sure you forwarded a message from the channel or sent a valid numeric ID.",
+            "<b>❌ Invalid Channel ID!\n"
+            "Make sure you forwarded a message from the channel or sent a valid numeric ID.</b>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
@@ -264,21 +251,21 @@ async def add_db_channel_cb(client, query):
         bot_member = await chat.get_member("me")
         if bot_member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
             return await query.message.edit_text(
-                f"**❌ Bot is not an admin in {chat.title}**\n"
-                f"Please add the bot as an administrator and try again.",
+                f"<b>❌ Bot is not an admin in {chat.title}\n"
+                f"Please add the bot as an administrator and try again.</b>",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
             )
     except Exception as e:
         error_msg = str(e)
         if "CHANNEL_INVALID" in error_msg or "PEER_ID_INVALID" in error_msg:
             return await query.message.edit_text(
-                "**❌ Channel not found!**\n"
-                "Make sure the bot is added to the channel and the ID is correct.",
+                "<b>❌ Channel not found!\n"
+                "Make sure the bot is added to the channel and the ID is correct.</b>",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
             )
         else:
             return await query.message.edit_text(
-                f"**❌ Error accessing channel:**\n`{error_msg}`",
+                f"<b>❌ Error accessing channel:\n<code>{error_msg}</code></b>",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
             )
 
@@ -286,14 +273,14 @@ async def add_db_channel_cb(client, query):
     try:
         await client.mongodb.add_db_channel(channel_id)
         await query.message.edit_text(
-            f"**✅ Channel added successfully!**\n"
-            f"**ID:** `{channel_id}`\n"
-            f"**Name:** {chat.title}",
+            f"<b>✅ Channel added successfully!\n"
+            f"ID: <code>{channel_id}</code>\n"
+            f"Name: {chat.title}</b>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
     except Exception as e:
         await query.message.edit_text(
-            f"**❌ Database error:**\n`{e}`",
+            f"<b>❌ Database error:\n<code>{e}</code></b>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
@@ -303,11 +290,11 @@ async def rm_db_channel_cb(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**➖ Remove DB Channel:**</blockquote>
+    msg = f"""<b>➖ Remove DB Channel:
     
-__Send the Channel ID to remove.__
+Send the Channel ID to remove.
 
-_Timeout: 60s_
+Timeout: 60s</b>
 """
     await query.message.edit_text(msg)
     try:
@@ -315,13 +302,13 @@ _Timeout: 60s_
         try:
              channel_id = int(res.text.strip())
         except:
-             return await query.message.edit_text("**❌ Invalid ID!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
+             return await query.message.edit_text("<b>❌ Invalid ID!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
 
         await client.mongodb.remove_db_channel(channel_id)
-        await query.message.edit_text(f"**✅ Channel `{channel_id}` removed!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
+        await query.message.edit_text(f"<b>✅ Channel <code>{channel_id}</code> removed!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
 
     except ListenerTimeout:
-        await query.message.edit_text("**⌚ Timeout!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
+        await query.message.edit_text("<b>⌚ Timeout!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'db_channels')]]))
 
 
 @Client.on_callback_query(filters.regex("^toggle_multi_db$"))
@@ -342,9 +329,9 @@ async def premium_users_settings(client, query):
         return
     users = await client.mongodb.get_premium_users()
     
-    msg = f"""<blockquote>**💎 {sc('premium users management')}:**</blockquote>
+    msg = f"""<b>💎 {sc('premium users management')}:
 
-**{sc('total premium users')}:** `{len(users)}`
+{sc('total premium users')}: <code>{len(users)}</code>
 
 """
     
@@ -352,7 +339,7 @@ async def premium_users_settings(client, query):
         from datetime import datetime
         now = datetime.now()
         
-        msg += f"**{sc('active premium users')}:**\n"
+        msg += f"{sc('active premium users')}:\n"
         for i, uid in enumerate(users[:10], 1):
             data = await client.mongodb.user_data.find_one({"_id": uid})
             exp = data.get("premium_expire") if data else None
@@ -363,14 +350,14 @@ async def premium_users_settings(client, query):
             else:
                 status = "∞ " + sc('lifetime')
             
-            msg += f"**{i}.** `{uid}` — {status}\n"
+            msg += f"{i}. <code>{uid}</code> — {status}\n"
         
         if len(users) > 10:
-            msg += f"\n_+{len(users) - 10} {sc('more users')}_"
+            msg += f"\n+{len(users) - 10} {sc('more users')}"
     else:
         msg += f"_{sc('no premium users found')}_"
     
-    msg += f"\n\n__{sc('use buttons below to manage premium users')}__"
+    msg += f"\n\n{sc('use buttons below to manage premium users')}</b>"
     
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton(f'➕ {sc("add premium")}', 'add_premium_user'), InlineKeyboardButton(f'➖ {sc("remove premium")}', 'remove_premium_user')],
@@ -395,7 +382,7 @@ async def view_all_premium(client, query):
     from datetime import datetime
     now = datetime.now()
     
-    msg = f"""<blockquote>**💎 {sc('all premium users')} ({len(users)}):**</blockquote>
+    msg = f"""<b>💎 {sc('all premium users')} ({len(users)}):
 
 """
     
@@ -409,13 +396,13 @@ async def view_all_premium(client, query):
         else:
             status = "∞"
         
-        msg += f"`{i}.` `{uid}` — {status}\n"
+        msg += f"{i}. <code>{uid}</code> — {status}\n"
     
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]
     ])
     
-    await query.message.edit_text(msg, reply_markup=reply_markup)
+    await query.message.edit_text(msg + "</b>", reply_markup=reply_markup)
 
 
 @Client.on_callback_query(filters.regex("^add_premium_user$"))
@@ -424,33 +411,31 @@ async def add_premium_user_cb(client, query):
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
 
-    msg = f"""<blockquote>**➕ {sc('add premium user')}:**</blockquote>
+    msg = f"""<b>➕ {sc('add premium user')}:
 
 {sc('send user id and duration')}
 
-**{sc('format')}:** `user_id duration`
-**{sc('examples')}:**
-`123456789 30d` - 30 {sc('days')}
-`123456789 12h` - 12 {sc('hours')}
-`123456789 45m` - 45 {sc('minutes')}
-`123456789 7d12h` - 7 {sc('days')} 12 {sc('hours')}
-`123456789 0` - {sc('lifetime')}
+{sc('format')}: user_id duration
+{sc('examples')}:
+123456789 30d - 30 {sc('days')}
+123456789 12h - 12 {sc('hours')}
+123456789 45m - 45 {sc('minutes')}
+123456789 0 - {sc('lifetime')}
 
-_{sc('timeout')}: 60s_
-"""
+{sc('timeout')}: 60s</b>"""
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
 
     try:
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
         parts = res.text.strip().split()
         if len(parts) < 2:
-            await query.message.edit_text(f"❌ {sc('invalid format')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+            await query.message.edit_text(f"<b>❌ {sc('invalid format')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
             return
 
         try:
             user_id = int(parts[0])
         except ValueError:
-            await query.message.edit_text(f"❌ {sc('invalid user id')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+            await query.message.edit_text(f"<b>❌ {sc('invalid user id')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
             return
 
         duration_str = parts[1].lower()
@@ -467,20 +452,19 @@ _{sc('timeout')}: 60s_
         
         await client.mongodb.add_premium(user_id, expire_date)
 
-        # Admin confirmation with mention
+        # Admin confirmation (ALL BOLD)
         admin_reply = (
-            f"🎉 Premium activated successfully! 🚀\n\n"
+            f"<b>🎉 Premium activated successfully! 🚀\n\n"
             f"👤 User: {user_mention}\n"
             f"⚡ User ID: <code>{user_id}</code>\n"
             f"⏳ Premium Access Duration: {duration_text}\n"
         )
         if expire_date:
-            # Convert to Kolkata Time (IST - UTC+5:30)
             kolkata_time = expire_date + timedelta(hours=5, minutes=30)
             exp_date_str = kolkata_time.strftime("%d-%m-%Y")
             exp_time_str = kolkata_time.strftime("%I:%M:%S %p IST")
             admin_reply += f"⌛️ Expiry Date: {exp_date_str}\n"
-            admin_reply += f"⏱️ Expiry Time: {exp_time_str} (Kolkata)"
+            admin_reply += f"⏱️ Expiry Time: {exp_time_str} (Kolkata)</b>"
         else:
             admin_reply += "♾️ <b>Lifetime Premium</b>"
 
@@ -490,9 +474,9 @@ _{sc('timeout')}: 60s_
             disable_web_page_preview=True
         )
 
-        # User welcome message (without benefits)
+        # User welcome message (ALL BOLD)
         user_reply = (
-            f"💎 PREMIUM ACTIVE\n"
+            f"<b>💎 PREMIUM ACTIVE\n"
             f"🎉 You are now a PREMIUM USER!\n"
             f"⏳ Duration: {duration_text}\n"
         )
@@ -500,9 +484,9 @@ _{sc('timeout')}: 60s_
             kolkata_time = expire_date + timedelta(hours=5, minutes=30)
             exp_date_str = kolkata_time.strftime("%d-%m-%Y")
             exp_time_str = kolkata_time.strftime("%I:%M:%S %p IST")
-            user_reply += f"📅 Expiry: {exp_date_str} {exp_time_str} (Kolkata)\n"
+            user_reply += f"📅 Expiry: {exp_date_str} {exp_time_str} (Kolkata)</b>"
         else:
-            user_reply += "📅 Expiry: ♾️ Lifetime\n"
+            user_reply += "📅 Expiry: ♾️ Lifetime</b>"
 
         try:
             await client.send_message(user_id, user_reply)
@@ -510,7 +494,7 @@ _{sc('timeout')}: 60s_
             pass
 
     except ListenerTimeout:
-        await query.message.edit_text(f"**⌚ {sc('timeout')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+        await query.message.edit_text(f"<b>⌚ {sc('timeout')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
 
 
 @Client.on_callback_query(filters.regex("^remove_premium_user$"))
@@ -518,14 +502,14 @@ async def remove_premium_user_cb(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**➖ {sc('remove premium user')}:**</blockquote>
+    msg = f"""<b>➖ {sc('remove premium user')}:
 
 {sc('send user id to remove premium')}
 
-**{sc('format')}:** `user_id`
-**{sc('example')}:** `123456789`
+{sc('format')}: user_id
+{sc('example')}: 123456789
 
-_{sc('timeout')}: 60s_
+{sc('timeout')}: 60s</b>
 """
     await query.message.edit_text(msg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("cancel")}', 'premium_users_settings')]]))
 
@@ -535,27 +519,27 @@ _{sc('timeout')}: 60s_
         try:
             user_id = int(res.text.strip())
         except:
-            await query.message.edit_text(f"❌ {sc('invalid user id')}!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+            await query.message.edit_text(f"<b>❌ {sc('invalid user id')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
             return
         
         await client.mongodb.remove_premium(user_id)
         
         await query.message.edit_text(
-            f"✅ **{sc('premium removed')}!**\n\n"
-            f"**{sc('user id')}:** `{user_id}`",
+            f"<b>✅ {sc('premium removed')}!\n\n"
+            f"{sc('user id')}: <code>{user_id}</code></b>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]])
         )
         
         try:
             await client.send_message(
                 user_id,
-                f"⚠️ **{sc('your premium was removed')}**"
+                f"<b>⚠️ {sc('your premium was removed')}</b>"
             )
         except:
             pass
             
     except ListenerTimeout:
-        await query.message.edit_text(f"**⌚ {sc('timeout')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
+        await query.message.edit_text(f"<b>⌚ {sc('timeout')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'premium_users_settings')]]))
 
 
 @Client.on_callback_query(filters.regex("^auto_batch_settings$"))
@@ -570,13 +554,13 @@ async def auto_batch_settings(client, query):
     status = f"✅ {sc('Enabled')}" if enabled else f"❌ {sc('Disabled')}"
     mode_text = "📺 Episodes (S01 E01)" if mode == 'episode' else "🎬 Series/Movie (Name [Quality])"
     
-    msg = f"""<blockquote>**🤖 {sc('Auto-Batch Settings')}:**</blockquote>
-**Status:** {status}
-**Mode:** `{mode_text}`
-**Time Window:** `{window}s`
+    msg = f"""<b>🤖 {sc('Auto-Batch Settings')}:
+Status: {status}
+Mode: <code>{mode_text}</code>
+Time Window: <code>{window}s</code>
 
-__{sc('Automatically groups files sent to the channel into batches.')}__
-__{sc('Turning this OFF will stop those annoying messages!')}__
+{sc('Automatically groups files sent to the channel into batches.')}
+{sc('Turning this OFF will stop those annoying messages!')}</b>
 """
     toggle_text = f"🔴 {sc('Disable')}" if enabled else f"🟢 {sc('Enable')}"
     
@@ -615,10 +599,10 @@ async def toggle_batch_mode(client, query):
 async def admins(client, query):
     if not (query.from_user.id == OWNER_ID):
         return await query.answer('Only the owner can access this!', show_alert=True)
-    msg = f"""<blockquote>**Admin Settings:**</blockquote>
-**Admin User IDs:** {", ".join(f"`{a}`" for a in client.admins)}
+    msg = f"""<b>Admin Settings:
+Admin User IDs: {", ".join(f"<code>{a}</code>" for a in client.admins)}
 
-__Use the appropriate button below to add or remove an admin based on your needs!__
+Use the appropriate button below to add or remove an admin based on your needs!</b>
 """
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton('ᴀᴅᴅ ᴀᴅᴍɪɴ', 'add_admin'), InlineKeyboardButton('ʀᴇᴍᴏᴠᴇ ᴀᴅᴍɪɴ', 'rm_admin')],
@@ -633,7 +617,7 @@ async def add_new_admins(client, query):
     await query.answer()
     if not query.from_user.id in client.admins:
         return await client.send_message(query.from_user.id, client.reply_text)
-    ids_msg = await client.ask(query.from_user.id, "Send user ids seperated by a space in the next 60 seconds!\nEg: `838278682 83622928 82789928`", filters=filters.text, timeout=60)
+    ids_msg = await client.ask(query.from_user.id, "<b>Send user ids seperated by a space in the next 60 seconds!\nEg: <code>838278682 83622928 82789928</code></b>", filters=filters.text, timeout=60)
     ids = ids_msg.text.split()
     
     try:
@@ -642,9 +626,9 @@ async def add_new_admins(client, query):
                 client.admins.append(int(identifier))
             
     except Exception as e:
-        return await ids_msg.reply(f"Error: {e}")
+        return await ids_msg.reply(f"<b>Error: <code>{e}</code></b>")
     await admins(client, query)
-    return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been promoted!!__")
+    return await ids_msg.reply(f"<b>{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been promoted!!</b>")
     
 
 @Client.on_callback_query(filters.regex("^rm_admin$"))
@@ -652,20 +636,20 @@ async def remove_admins(client, query):
     await query.answer()
     if not query.from_user.id in client.admins:
         return await client.send_message(query.from_user.id, client.reply_text)
-    ids_msg = await client.ask(query.from_user.id, "Send user ids seperated by a space in the next 60 seconds!\nEg: `838278682 83622928 82789928`", filters=filters.text, timeout=60)
+    ids_msg = await client.ask(query.from_user.id, "<b>Send user ids seperated by a space in the next 60 seconds!\nEg: <code>838278682 83622928 82789928</code></b>", filters=filters.text, timeout=60)
     ids = ids_msg.text.split()
     
     try:
         for identifier in ids:
             if int(identifier) == client.owner:
-                await client.send_message(query.from_user.id, "Nigga i can never remove the owner from the admin list!!")
+                await client.send_message(query.from_user.id, "<b>Nigga i can never remove the owner from the admin list!!</b>")
                 continue
             if int(identifier) in client.admins:
                 client.admins.remove(int(identifier))
     except Exception as e:
-        return await ids_msg.reply(f"Error: {e}")
+        return await ids_msg.reply(f"<b>Error: <code>{e}</code></b>")
     await admins(client, query)
-    return await ids_msg.reply(f"__{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been removed!!__")
+    return await ids_msg.reply(f"<b>{len(ids)} admin {'id' if len(ids)==1 else 'ids'} have been removed!!</b>")
 
 
 @Client.on_callback_query(filters.regex("^photos$"))
@@ -673,11 +657,11 @@ async def photos(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Force Subscription Settings:**</blockquote>
-**Start Photo:** `{client.messages.get("START_PHOTO", "None")}`
-**Force Sub Photo:** `{client.messages.get('FSUB_PHOTO', 'None')}`
+    msg = f"""<b>Force Subscription Settings:
+Start Photo: <code>{client.messages.get("START_PHOTO", "None")}</code>
+Force Sub Photo: <code>{client.messages.get('FSUB_PHOTO', 'None')}</code>
 
-__Use the appropriate button below to add or remove any admin based on your needs!__
+Use the appropriate button below to add or remove any admin based on your needs!</b>
 """
     reply_markup = InlineKeyboardMarkup([
     [
@@ -715,20 +699,20 @@ async def url_shorteners(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**URL Shortener Settings:**</blockquote>
-**Configured Providers:** `{len(URL_SHORTENERS)}`
-**Active Providers:** `{len([k for k, v in URL_SHORTENERS.items() if v.get('active', False)])}`
+    msg = f"""<b>URL Shortener Settings:
+Configured Providers: <code>{len(URL_SHORTENERS)}</code>
+Active Providers: <code>{len([k for k, v in URL_SHORTENERS.items() if v.get('active', False)])}</code>
 
 """
     token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
     system_status = "✅ Enabled" if token_verification_enabled else "❌ Disabled"
-    msg += f"**Global Verification System:** {system_status}\n\n"
+    msg += f"Global Verification System: {system_status}\n\n"
 
     for key, provider in URL_SHORTENERS.items():
         status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
-        msg += f"**{provider['name']}:** {status}\n"
-        msg += f"  • API URL: `{provider['api_url']}`\n"
-        msg += f"  • Token: `{provider.get('api_token', 'Not set')[:10]}...`\n\n"
+        msg += f"{provider['name']}: {status}\n"
+        msg += f"  • API URL: <code>{provider['api_url']}</code>\n"
+        msg += f"  • Token: <code>{provider.get('api_token', 'Not set')[:10]}...</code>\n\n"
 
     toggle_btn_text = "🔴 Disable System" if token_verification_enabled else "🟢 Enable System"
 
@@ -739,7 +723,7 @@ async def url_shorteners(client, query):
         [InlineKeyboardButton('ᴛᴏɢɢʟᴇ ᴘʀᴏᴠɪᴅᴇʀ', 'toggle_shortener'), InlineKeyboardButton('ʀᴇᴍᴏᴠᴇ ᴘʀᴏᴠɪᴅᴇʀ', 'rm_shortener')],
         [InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]
     )
-    await query.message.edit_text(msg, reply_markup=reply_markup)
+    await query.message.edit_text(msg + "</b>", reply_markup=reply_markup)
     return
 
 
@@ -748,10 +732,10 @@ async def auto_del(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Change Auto Delete Time:**</blockquote>
-**Current Timer:** `{client.auto_del}`
+    msg = f"""<b>Change Auto Delete Time:
+Current Timer: <code>{client.auto_del}</code>
 
-__Enter new integer value of auto delete timer, keep 0 to disable auto delete and -1 to as it was, or wait for 60 second timeout to be comoleted!__
+Enter new integer value of auto delete timer, keep 0 to disable auto delete and -1 to as it was, or wait for 60 second timeout to be comoleted!</b>
 """
     await query.answer()
     await query.message.edit_text(msg)
@@ -763,13 +747,13 @@ __Enter new integer value of auto delete timer, keep 0 to disable auto delete an
             if timer >= 0:
                 client.auto_del = timer
                 await client.mongodb.set_bot_config('auto_del', timer)
-                return await query.message.edit_text(f'**Auto Delete timer value changed to {timer} seconds!**', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
+                return await query.message.edit_text(f'<b>Auto Delete timer value changed to {timer} seconds!</b>', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
             else:
-                return await query.message.edit_text("**There is no change done in auto delete timer!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
+                return await query.message.edit_text("<b>There is no change done in auto delete timer!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
         else:
-            return await query.message.edit_text("**This is not an integer value!!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
+            return await query.message.edit_text("<b>This is not an integer value!!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'settings')]]))
 
 
 @Client.on_callback_query(filters.regex("^texts$"))
@@ -777,15 +761,15 @@ async def texts(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Text Configuration:**</blockquote>
-**Start Message:**
+    msg = f"""<b>Text Configuration:
+Start Message:
 <pre>{client.messages.get('START', 'Empty')}</pre>
-**Force Sub Message:**
+Force Sub Message:
 <pre>{client.messages.get('FSUB', 'Empty')}</pre>
-**About Message:**
+About Message:
 <pre>{client.messages.get('ABOUT', 'Empty')}</pre>
-**Reply Message:**
-<pre>{client.reply_text}</pre>
+Reply Message:
+<pre>{client.reply_text}</pre></b>
     """
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton(f'ꜱᴛᴀʀᴛ ᴛᴇxᴛ', 'start_txt'), InlineKeyboardButton(f'ꜰꜱᴜʙ ᴛᴇxᴛ', 'fsub_txt')],
@@ -821,10 +805,10 @@ async def add_start_photo(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Change Start Image:**</blockquote>
-**Current Start Image:** `{client.messages.get('START_PHOTO', '')}`
+    msg = f"""<b>Change Start Image:
+Current Start Image: <code>{client.messages.get('START_PHOTO', '')}</code>
 
-__Enter new link of start image or send the photo, or wait for 60 second timeout to be comoleted!__
+Enter new link of start image or send the photo, or wait for 60 second timeout to be comoleted!</b>
 """
     await query.answer()
     await query.message.edit_text(msg)
@@ -832,15 +816,15 @@ __Enter new link of start image or send the photo, or wait for 60 second timeout
         res = await client.listen(user_id=query.from_user.id, filters=(filters.text|filters.photo), timeout=60)
         if res.text and res.text.startswith('https://' or 'http://'):
             client.messages['START_PHOTO'] = res.text
-            return await query.message.edit_text("**This link has been set at the place of start photo!!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>This link has been set at the place of start photo!!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
         elif res.photo:
             loc = await res.download()
             client.messages['START_PHOTO'] = loc
-            return await query.message.edit_text("**This image has been set as the starting image!!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>This image has been set as the starting image!!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
         else:
-            return await query.message.edit_text("**Invalid Photo or Link format!!**\n__If you're sending the link of any image it must starts with either 'http' or 'https'!__", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>Invalid Photo or Link format!!\nIf you're sending the link of any image it must starts with either 'http' or 'https'!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
 
 
 @Client.on_callback_query(filters.regex("^add_fsub_photo$"))
@@ -848,10 +832,10 @@ async def add_fsub_photo(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Change Force Sub Image:**</blockquote>
-**Current Force Sub Image:** `{client.messages.get('FSUB_PHOTO', '')}`
+    msg = f"""<b>Change Force Sub Image:
+Current Force Sub Image: <code>{client.messages.get('FSUB_PHOTO', '')}</code>
 
-__Enter new link of fsub image or send the photo, or wait for 60 second timeout to be comoleted!__
+Enter new link of fsub image or send the photo, or wait for 60 second timeout to be comoleted!</b>
 """
     await query.answer()
     await query.message.edit_text(msg)
@@ -859,15 +843,15 @@ __Enter new link of fsub image or send the photo, or wait for 60 second timeout 
         res = await client.listen(user_id=query.from_user.id, filters=(filters.text|filters.photo), timeout=60)
         if res.text and res.text.startswith('https://' or 'http://'):
             client.messages['FSUB_PHOTO'] = res.text
-            return await query.message.edit_text("**This link has been set at the place of fsub photo!!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>This link has been set at the place of fsub photo!!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
         elif res.photo:
             loc = await res.download()
             client.messages['FSUB_PHOTO'] = loc
-            return await query.message.edit_text("**This image has been set as the force sub image!!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>This image has been set as the force sub image!!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
         else:
-            return await query.message.edit_text("**Invalid Photo or Link format!!**\n__If you're sending the link of any image it must starts with either 'http' or 'https'!__", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+            return await query.message.edit_text("<b>Invalid Photo or Link format!!\nIf you're sending the link of any image it must starts with either 'http' or 'https'!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
 
 
 @Client.on_callback_query(filters.regex("^add_shortener$"))
@@ -875,17 +859,15 @@ async def add_shortener(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**Add New URL Shortener Provider:**</blockquote>
+    msg = f"""<b>Add New URL Shortener Provider:
 
-__Send the provider details in this format:__
+Send the provider details in this format:
 
-**Example:**
+Supported Formats:
+• text - Returns plain text URL
+• json - Returns JSON response
 
-**Supported Formats:**
-• `text` - Returns plain text URL
-• `json` - Returns JSON response
-
-__Send the details or wait for 60 second timeout to be completed!__
+Send the details or wait for 60 second timeout to be completed!</b>
 """
     await query.answer()
     await query.message.edit_text(msg)
@@ -894,12 +876,12 @@ __Send the details or wait for 60 second timeout to be completed!__
         details = res.text.strip().split('|')
         
         if len(details) != 5:
-            return await query.message.edit_text("**Invalid format! Please use: provider_key|Name|API_URL|Token|Format**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text("<b>Invalid format! Please use: provider_key|Name|API_URL|Token|Format</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
         provider_key, name, api_url, api_token, format_type = details
         
         if provider_key in URL_SHORTENERS:
-            return await query.message.edit_text(f"**Provider '{provider_key}' already exists!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text(f"<b>Provider '{provider_key}' already exists!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
         URL_SHORTENERS[provider_key] = {
             'name': name,
@@ -909,10 +891,10 @@ __Send the details or wait for 60 second timeout to be completed!__
             'active': True
         }
         
-        return await query.message.edit_text(f"**✅ Provider '{name}' added successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text(f"<b>✅ Provider '{name}' added successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
 
 
 @Client.on_callback_query(filters.regex("^edit_shortener$"))
@@ -923,15 +905,15 @@ async def edit_shortener(client, query):
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
-    msg = f"""<blockquote>**Edit URL Shortener Provider:**</blockquote>
+    msg = f"""<b>Edit URL Shortener Provider:
 
-**Available Providers:**
+Available Providers:
 """
     for key, provider in URL_SHORTENERS.items():
         status = "✅" if provider.get('active', False) else "❌"
-        msg += f"{status} `{key}` - {provider['name']}\n"
+        msg += f"{status} <code>{key}</code> - {provider['name']}\n"
     
-    msg += f"\n__Send the provider key to edit or wait for 60 second timeout to be completed!__"
+    msg += f"\nSend the provider key to edit or wait for 60 second timeout to be completed!</b>"
     
     await query.answer()
     await query.message.edit_text(msg)
@@ -940,21 +922,21 @@ async def edit_shortener(client, query):
         provider_key = res.text.strip()
         
         if provider_key not in URL_SHORTENERS:
-            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text(f"<b>Provider '{provider_key}' not found!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
         provider = URL_SHORTENERS[provider_key]
-        msg = f"""<blockquote>**Edit Provider: {provider['name']}**</blockquote>
+        msg = f"""<b>Edit Provider: {provider['name']}
 
-**Current Settings:**
-• Name: `{provider['name']}`
-• API URL: `{provider['api_url']}`
-• Token: `{provider.get('api_token', 'Not set')[:15]}...`
-• Format: `{provider.get('format', 'text')}`
-• Active: `{"Yes" if provider.get('active', False) else "No"}`
+Current Settings:
+• Name: <code>{provider['name']}</code>
+• API URL: <code>{provider['api_url']}</code>
+• Token: <code>{provider.get('api_token', 'Not set')[:15]}...</code>
+• Format: <code>{provider.get('format', 'text')}</code>
+• Active: {"Yes" if provider.get('active', False) else "No"}
 
-__Send new details in format:__
+Send new details in format:
 
-**Example:**
+Example:</b>
 """
         await query.message.edit_text(msg)
         try:
@@ -962,7 +944,7 @@ __Send new details in format:__
             details = res2.text.strip().split('|')
             
             if len(details) != 5:
-                return await query.message.edit_text("**Invalid format! Use: Name|API_URL|Token|Format|Active(1/0)**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+                return await query.message.edit_text("<b>Invalid format! Use: Name|API_URL|Token|Format|Active(1/0)</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
             
             name, api_url, api_token, format_type, active = details
             
@@ -974,13 +956,13 @@ __Send new details in format:__
                 'active': active == '1'
             }
             
-            return await query.message.edit_text(f"**✅ Provider '{name}' updated successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text(f"<b>✅ Provider '{name}' updated successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
             
         except ListenerTimeout:
-            return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
 
 
 @Client.on_callback_query(filters.regex("^toggle_shortener$"))
@@ -991,15 +973,15 @@ async def toggle_shortener(client, query):
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
-    msg = f"""<blockquote>**Toggle URL Shortener Active Status:**</blockquote>
+    msg = f"""<b>Toggle URL Shortener Active Status:
 
-**Available Providers:**
+Available Providers:
 """
     for key, provider in URL_SHORTENERS.items():
         status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
-        msg += f"• `{key}` - {provider['name']} ({status})\n"
+        msg += f"• <code>{key}</code> - {provider['name']} ({status})\n"
     
-    msg += f"\n__Send the provider key to toggle or wait for 60 second timeout to be completed!__"
+    msg += f"\nSend the provider key to toggle or wait for 60 second timeout to be completed!</b>"
     
     await query.answer()
     await query.message.edit_text(msg)
@@ -1008,17 +990,17 @@ async def toggle_shortener(client, query):
         provider_key = res.text.strip()
         
         if provider_key not in URL_SHORTENERS:
-            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text(f"<b>Provider '{provider_key}' not found!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
         provider = URL_SHORTENERS[provider_key]
         current_status = provider.get('active', False)
         provider['active'] = not current_status
         
         status_text = "activated" if provider['active'] else "deactivated"
-        return await query.message.edit_text(f"**✅ Provider '{provider['name']}' {status_text} successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text(f"<b>✅ Provider '{provider['name']}' {status_text} successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
 
 
 @Client.on_callback_query(filters.regex("^rm_shortener$"))
@@ -1029,16 +1011,16 @@ async def rm_shortener(client, query):
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
     
-    msg = f"""<blockquote>**Remove URL Shortener Provider:**</blockquote>
+    msg = f"""<b>Remove URL Shortener Provider:
 
-**Available Providers:**
+Available Providers:
 """
     for key, provider in URL_SHORTENERS.items():
         status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
-        msg += f"• `{key}` - {provider['name']} ({status})\n"
+        msg += f"• <code>{key}</code> - {provider['name']} ({status})\n"
     
-    msg += f"\n__Send the provider key to remove or wait for 60 second timeout to be completed!__\n"
-    msg += f"**⚠️ Warning:** This action cannot be undone!"
+    msg += f"\nSend the provider key to remove or wait for 60 second timeout to be completed!\n"
+    msg += f"⚠️ Warning: This action cannot be undone!</b>"
     
     await query.answer()
     await query.message.edit_text(msg)
@@ -1047,15 +1029,15 @@ async def rm_shortener(client, query):
         provider_key = res.text.strip()
         
         if provider_key not in URL_SHORTENERS:
-            return await query.message.edit_text(f"**Provider '{provider_key}' not found!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+            return await query.message.edit_text(f"<b>Provider '{provider_key}' not found!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
         provider_name = URL_SHORTENERS[provider_key]['name']
         del URL_SHORTENERS[provider_key]
         
-        return await query.message.edit_text(f"**✅ Provider '{provider_name}' removed successfully!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text(f"<b>✅ Provider '{provider_name}' removed successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
         
     except ListenerTimeout:
-        return await query.message.edit_text("**Timeout, try again!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
 
 
 @Client.on_callback_query(filters.regex("^global_token_toggle$"))
@@ -1080,12 +1062,12 @@ async def anti_bypass_settings(client, query):
     
     status = f"✅ {sc('Enabled')}" if bypass_check_enabled else f"❌ {sc('Disabled')}"
     
-    msg = f"""<blockquote>**⚠️ {sc('Anti-Bypass System Configuration')}:**</blockquote>
+    msg = f"""<b>⚠️ {sc('Anti-Bypass System Configuration')}:
 
-**{sc('System Status')}:** {status}
-**{sc('Minimum Wait Time')}:** `{bypass_timer} {sc('seconds')}`
+{sc('System Status')}: {status}
+{sc('Minimum Wait Time')}: <code>{bypass_timer} {sc('seconds')}</code>
 
-__{sc('This system prevents users from solving the shortener too quickly (skipping ads)')}.__
+{sc('This system prevents users from solving the shortener too quickly (skipping ads)')}.</b>
 """
     toggle_text = f"🔴 {sc('Disable')}" if bypass_check_enabled else f"🟢 {sc('Enable')}"
     
@@ -1113,12 +1095,12 @@ async def set_bypass_timer(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<blockquote>**{sc('change anti-bypass timer')}:**</blockquote>
+    msg = f"""<b>{sc('change anti-bypass timer')}:
     
-__{sc('enter the minimum time (in seconds) a user must take to solve the shortener')}.__
-__{sc('default is 60 seconds')}.__
+{sc('enter the minimum time (in seconds) a user must take to solve the shortener')}.
+{sc('default is 60 seconds')}.
 
-__{sc('send the number or wait for timeout')}!__
+{sc('send the number or wait for timeout')}!</b>
 """
     await query.message.edit_text(msg)
     try:
@@ -1126,8 +1108,8 @@ __{sc('send the number or wait for timeout')}!__
         if res.text.isdigit():
             timer = int(res.text)
             await client.mongodb.set_bot_config('bypass_timer', timer)
-            await query.message.edit_text(f"**{sc('timer updated to')} {timer} {sc('seconds')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
+            await query.message.edit_text(f"<b>{sc('timer updated to')} {timer} {sc('seconds')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
         else:
-            await query.message.edit_text(f"**{sc('invalid number')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
+            await query.message.edit_text(f"<b>{sc('invalid number')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
     except ListenerTimeout:
-        await query.message.edit_text(f"**{sc('timeout')}!**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
+        await query.message.edit_text(f"<b>{sc('timeout')}!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(f'◂ {sc("back")}', 'anti_bypass_settings')]]))
