@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from datetime import datetime, timedelta
 from helper.font_converter import to_small_caps as sc
-from config import OWNER_ID
+from config import OWNER_ID, MYPLAN_IMG
 
 
 # ===============================
@@ -56,6 +56,25 @@ def parse_duration(duration_str: str):
         return None, "Lifetime"
     except:
         return None, "Lifetime"
+
+
+def format_duration_left(expire_date):
+    """Return human-readable remaining time from now until expire_date."""
+    if expire_date is None:
+        return "Lifetime"
+    now = datetime.now()
+    if expire_date < now:
+        return "Expired"
+    delta = expire_date - now
+    days = delta.days
+    hours = delta.seconds // 3600
+    minutes = (delta.seconds % 3600) // 60
+    if days > 0:
+        return f"{days} day{'s' if days > 1 else ''}"
+    elif hours > 0:
+        return f"{hours} hour{'s' if hours > 1 else ''}"
+    else:
+        return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
 
 # ===============================
@@ -255,24 +274,87 @@ async def check_premium(client: Client, message: Message):
 
 
 # ===============================
-#  CHECK SELF
+#  MY PLAN (PREMIUM STATUS FOR SELF)
 # ===============================
-@Client.on_message(filters.private & filters.command("mypremium"))
-async def my_premium(client: Client, message: Message):
+@Client.on_message(filters.private & filters.command("myplan"))
+async def my_plan(client: Client, message: Message):
     uid = message.from_user.id
 
+    # Temporary "fetching" message (blockquote) - ALL BOLD
+    temp = await message.reply(
+        "<blockquote><b>⏳ Fetching your profile ...</b></blockquote>"
+    )
+
+    # Get user data
     is_premium = await client.mongodb.is_premium(uid)
     data = await client.mongodb.user_data.find_one({"_id": uid})
+    expire = data.get("premium_expire") if data else None
 
-    if not is_premium:
-        return await message.reply("<b>❌ You are NOT premium.</b>")
+    # User info
+    first = message.from_user.first_name or ""
+    username = f"@{message.from_user.username}" if message.from_user.username else "N/A"
+    user_id = uid
 
-    expire = data.get("premium_expire")
+    if is_premium and expire is not None:
+        # Premium active with expiry
+        duration_left = format_duration_left(expire)
+        # Convert expiry to IST (UTC+5:30)
+        ist_time = expire + timedelta(hours=5, minutes=30)
+        exp_date = ist_time.strftime("%d-%m-%Y")
+        exp_time = ist_time.strftime("%I:%M:%S %p IST").lower()
+        status = "✅ ᴀᴄᴛɪᴠᴇ"
+    elif is_premium and expire is None:
+        # Lifetime premium
+        duration_left = "Lifetime"
+        exp_date = "♾️ Lifetime"
+        exp_time = ""
+        status = "✅ ᴀᴄᴛɪᴠᴇ"
+    else:
+        # Not premium
+        duration_left = None
+        exp_date = None
+        exp_time = None
+        status = "❌ ɴᴏᴛ ᴀᴄᴛɪᴠᴇ"
 
-    await message.reply(
-        f"<b>💎 Your Premium Status\n"
-        f"⏳ Expiry: <code>{expire.strftime('%Y-%m-%d %H:%M:%S') if expire else '♾ Lifetime'}</code></b>"
-    )
+    # Build caption - ALL BOLD
+    if is_premium:
+        caption = (
+            f"<b>╭───────────⭓</b>\n"
+            f"<b>│ ᴘʀᴏғɪʟᴇ</b>\n"
+            f"<b>╰───────────⭓</b>\n"
+            f"<b>• ɴᴀᴍᴇ:</b> <b>{first}</b>\n"
+            f"<b>• ᴜsᴇʀɴᴀᴍᴇ:</b> <b>{username}</b>\n"
+            f"<b>• ᴜsᴇʀ ɪᴅ:</b> <b><code>{user_id}</code></b>\n"
+            f"<b>• ᴘʀᴇᴍɪᴜᴍ sᴛᴀᴛᴜs:</b> <b>{status}</b>\n"
+            f"<b>• ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ ᴅᴜʀᴀᴛɪᴏɴ:</b> <b>{duration_left}</b>\n"
+            f"<b>• ᴇxᴘɪʀʏ ᴅᴀᴛᴇ:</b> <b>{exp_date}</b>\n"
+            f"<b>• ᴇxᴘɪʀʏ ᴛɪᴍᴇ:</b> <b>{exp_time if exp_time else '—'}</b>\n"
+            f"<b>━━━━━━━━━━━━━━━━━</b>"
+        )
+    else:
+        caption = (
+            f"<b>╭───────────⭓</b>\n"
+            f"<b>│ ᴘʀᴏғɪʟᴇ</b>\n"
+            f"<b>╰───────────⭓</b>\n"
+            f"<b>• ɴᴀᴍᴇ:</b> <b>{first}</b>\n"
+            f"<b>• ᴜsᴇʀɴᴀᴍᴇ:</b> <b>{username}</b>\n"
+            f"<b>• ᴜsᴇʀ ɪᴅ:</b> <b><code>{user_id}</code></b>\n"
+            f"<b>• ᴘʀᴇᴍɪᴜᴍ sᴛᴀᴛᴜs:</b> <b>{status}</b>\n"
+            f"<b>━━━━━━━━━━━━━━━━━</b>"
+        )
+
+    # Delete temporary message
+    await temp.delete()
+
+    # Send final response with image
+    if MYPLAN_IMG:
+        await client.send_photo(
+            chat_id=message.chat.id,
+            photo=MYPLAN_IMG,
+            caption=caption
+        )
+    else:
+        await message.reply(caption)
 
 
 # ===============================
