@@ -93,6 +93,8 @@ WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 # Videos will be sent as animations (GIF-like) automatically.
 BYPASS_ATTEMPT_MEDIA = "https://videotourl.com/videos/1788160021118-5b825ba1-c273-4df3-9c10-1649b6c73ee7.mp4 https://i.postimg.cc/4ykP3SHc/IMG-20250927-131101-178.jpg"
 
+MYPLAN_IMG = "https://i.postimg.cc/L6D7Vzcm/46Lv-Lz-MD19tzyo-Pc7HUf4PPvi62.jpg"
+
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     formatter = logging.Formatter(
