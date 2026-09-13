@@ -19,11 +19,9 @@ def parse_duration(duration_str: str):
     """Parse duration string and return (expire_date, readable_text)"""
     from datetime import datetime, timedelta
     
-    # If '0' or 'lifetime' -> lifetime
     if duration_str == '0' or duration_str == 'lifetime':
         return None, "Lifetime"
     
-    # Check if it ends with d, h, or m
     if duration_str.endswith('d'):
         try:
             days = int(duration_str[:-1])
@@ -51,7 +49,6 @@ def parse_duration(duration_str: str):
         except:
             pass
     
-    # Try parsing as plain number (assume days)
     try:
         days = int(duration_str)
         if days > 0:
@@ -228,9 +225,8 @@ async def add_db_channel_cb(client, query):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
-    # Extract channel ID - FIXED for older Pyrogram version
     channel_id = None
-    if res.forward_from_chat:  # Changed from forward_origin
+    if res.forward_from_chat:
         channel_id = res.forward_from_chat.id
     elif res.text:
         try:
@@ -245,7 +241,6 @@ async def add_db_channel_cb(client, query):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
         )
 
-    # Verify the bot is an admin in the channel
     try:
         chat = await client.get_chat(channel_id)
         bot_member = await chat.get_member("me")
@@ -269,7 +264,6 @@ async def add_db_channel_cb(client, query):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ Back', 'db_channels')]])
             )
 
-    # Add to database
     try:
         await client.mongodb.add_db_channel(channel_id)
         await query.message.edit_text(
@@ -440,19 +434,16 @@ async def add_premium_user_cb(client, query):
 
         duration_str = parts[1].lower()
         
-        # Fetch user info for mention
         try:
             user = await client.get_users(user_id)
             user_mention = user.mention
         except Exception:
             user_mention = f"<a href='tg://user?id={user_id}'>{user_id}</a>"
 
-        # Parse duration
         expire_date, duration_text = parse_duration(duration_str)
         
         await client.mongodb.add_premium(user_id, expire_date)
 
-        # Admin confirmation (ALL BOLD)
         admin_reply = (
             f"<b>🎉 Premium activated successfully! 🚀\n\n"
             f"👤 User: {user_mention}\n"
@@ -474,7 +465,6 @@ async def add_premium_user_cb(client, query):
             disable_web_page_preview=True
         )
 
-        # User welcome message (ALL BOLD)
         user_reply = (
             f"<b>💎 PREMIUM ACTIVE\n"
             f"🎉 You are now a PREMIUM USER!\n"
@@ -710,7 +700,8 @@ Active Providers: <code>{len([k for k, v in URL_SHORTENERS.items() if v.get('act
 
     for key, provider in URL_SHORTENERS.items():
         status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
-        msg += f"{provider['name']}: {status}\n"
+        num = provider.get('number', '-')
+        msg += f"{num}. {provider['name']}: {status}\n"
         msg += f"  • API URL: <code>{provider['api_url']}</code>\n"
         msg += f"  • Token: <code>{provider.get('api_token', 'Not set')[:10]}...</code>\n\n"
 
@@ -854,49 +845,111 @@ Enter new link of fsub image or send the photo, or wait for 60 second timeout to
         return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'photos')]]))
 
 
+# =====================================================
+#  NEW ADD SHORTENER FLOW (3 STEPS)
+# =====================================================
 @Client.on_callback_query(filters.regex("^add_shortener$"))
 async def add_shortener(client, query):
     if query.from_user.id not in client.admins:
         await query.answer("Only Admins Can Access This", show_alert=True)
         return
-    msg = f"""<b>Add New URL Shortener Provider:
 
-Send the provider details in this format:
+    back_kb = InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]])
 
-Supported Formats:
-• text - Returns plain text URL
-• json - Returns JSON response
-
-Send the details or wait for 60 second timeout to be completed!</b>
-"""
-    await query.answer()
-    await query.message.edit_text(msg)
+    # STEP 1 — Number & Title
+    await query.message.edit_text(
+        "<b>➕ <u>Add New URL Shortener</u>\n\n"
+        "Step 1/3 — Send the shortener number & title.\n\n"
+        "Examples:\n"
+        "• <code>1 Shortxlinks</code>\n"
+        "• <code>2 Arolinks</code>\n\n"
+        "⏱ Timeout: 60s</b>",
+        reply_markup=back_kb
+    )
     try:
-        res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
-        details = res.text.strip().split('|')
-        
-        if len(details) != 5:
-            return await query.message.edit_text("<b>Invalid format! Please use: provider_key|Name|API_URL|Token|Format</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-        
-        provider_key, name, api_url, api_token, format_type = details
-        
-        if provider_key in URL_SHORTENERS:
-            return await query.message.edit_text(f"<b>Provider '{provider_key}' already exists!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-        
-        URL_SHORTENERS[provider_key] = {
-            'name': name,
-            'api_url': api_url,
-            'api_token': api_token,
-            'format': format_type,
-            'active': True
-        }
-        
-        return await query.message.edit_text(f"<b>✅ Provider '{name}' added successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-        
+        res1 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
     except ListenerTimeout:
-        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>⌚ Timeout, try again!</b>", reply_markup=back_kb)
+
+    parts = res1.text.strip().split(maxsplit=1)
+    if len(parts) < 2 or not parts[0].isdigit():
+        return await query.message.edit_text(
+            "<b>❌ Invalid format!\nSend like: <code>1 Shortxlinks</code></b>",
+            reply_markup=back_kb
+        )
+
+    number = parts[0]
+    name = parts[1].strip()
+    provider_key = name.lower().replace(' ', '_')
+
+    if provider_key in URL_SHORTENERS:
+        return await query.message.edit_text(
+            f"<b>❌ Provider '<code>{name}</code>' already exists!\n"
+            f"Use Edit Provider to modify it.</b>",
+            reply_markup=back_kb
+        )
+
+    # STEP 2 — Site URL
+    await query.message.edit_text(
+        f"<b>✅ Title saved: <code>{number} {name}</code>\n\n"
+        f"Step 2/3 — Send the shortener site URL.\n"
+        f"⚠️ Must start with <code>https://</code>\n\n"
+        f"Example: <code>https://arolinks.com</code>\n\n"
+        f"⏱ Timeout: 60s</b>",
+        reply_markup=back_kb
+    )
+    try:
+        res2 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+    except ListenerTimeout:
+        return await query.message.edit_text("<b>⌚ Timeout, try again!</b>", reply_markup=back_kb)
+
+    site_url = res2.text.strip()
+    if not site_url.lower().startswith("https://"):
+        return await query.message.edit_text(
+            "<b>❌ URL must start with <code>https://</code>\n"
+            "Example: <code>https://arolinks.com</code></b>",
+            reply_markup=back_kb
+        )
+
+    # STEP 3 — API Token
+    await query.message.edit_text(
+        f"<b>✅ Site URL saved: <code>{site_url}</code>\n\n"
+        f"Step 3/3 — Send your shortener API token.\n\n"
+        f"Example: <code>a1b2c3d4e5f6g7h8i9j0</code>\n\n"
+        f"⏱ Timeout: 60s</b>",
+        reply_markup=back_kb
+    )
+    try:
+        res3 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+    except ListenerTimeout:
+        return await query.message.edit_text("<b>⌚ Timeout, try again!</b>", reply_markup=back_kb)
+
+    api_token = res3.text.strip()
+    if not api_token:
+        return await query.message.edit_text("<b>❌ API token cannot be empty!</b>", reply_markup=back_kb)
+
+    URL_SHORTENERS[provider_key] = {
+        'number'   : number,
+        'name'     : name,
+        'api_url'  : site_url,
+        'api_token': api_token,
+        'active'   : True
+    }
+
+    return await query.message.edit_text(
+        f"<b>✅ <u>Provider Added Successfully</u>\n\n"
+        f"📌 Number   : <code>{number}</code>\n"
+        f"🏷️ Title    : <code>{name}</code>\n"
+        f"🔗 Site URL : <code>{site_url}</code>\n"
+        f"🔑 API Token: <code>{api_token[:12]}...</code>\n"
+        f"📄 Status   : ✅ Active</b>",
+        reply_markup=back_kb
+    )
 
 
+# =====================================================
+#  NEW EDIT SHORTENER FLOW (3 STEPS)
+# =====================================================
 @Client.on_callback_query(filters.regex("^edit_shortener$"))
 async def edit_shortener(client, query):
     if query.from_user.id not in client.admins:
@@ -904,65 +957,92 @@ async def edit_shortener(client, query):
         return
     if not URL_SHORTENERS:
         return await query.answer("No providers configured!")
-    
-    msg = f"""<b>Edit URL Shortener Provider:
 
-Available Providers:
-"""
-    for key, provider in URL_SHORTENERS.items():
-        status = "✅" if provider.get('active', False) else "❌"
-        msg += f"{status} <code>{key}</code> - {provider['name']}\n"
-    
-    msg += f"\nSend the provider key to edit or wait for 60 second timeout to be completed!</b>"
-    
-    await query.answer()
-    await query.message.edit_text(msg)
+    back_kb = InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]])
+
+    msg = "<b>✏️ <u>Edit URL Shortener Provider</u>\n\nAvailable Providers:\n"
+    for key, p in URL_SHORTENERS.items():
+        status = "✅" if p.get('active', False) else "❌"
+        num = p.get('number', '-')
+        msg += f"{status} <code>{num}</code> — <b>{p['name']}</b> (<code>{key}</code>)\n"
+    msg += "\nSend the provider number to edit (e.g. <code>1</code>)\n⏱ Timeout: 60s</b>"
+
+    await query.message.edit_text(msg, reply_markup=back_kb)
+
     try:
         res = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
-        provider_key = res.text.strip()
-        
-        if provider_key not in URL_SHORTENERS:
-            return await query.message.edit_text(f"<b>Provider '{provider_key}' not found!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-        
-        provider = URL_SHORTENERS[provider_key]
-        msg = f"""<b>Edit Provider: {provider['name']}
-
-Current Settings:
-• Name: <code>{provider['name']}</code>
-• API URL: <code>{provider['api_url']}</code>
-• Token: <code>{provider.get('api_token', 'Not set')[:15]}...</code>
-• Format: <code>{provider.get('format', 'text')}</code>
-• Active: {"Yes" if provider.get('active', False) else "No"}
-
-Send new details in format:
-
-Example:</b>
-"""
-        await query.message.edit_text(msg)
-        try:
-            res2 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
-            details = res2.text.strip().split('|')
-            
-            if len(details) != 5:
-                return await query.message.edit_text("<b>Invalid format! Use: Name|API_URL|Token|Format|Active(1/0)</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-            
-            name, api_url, api_token, format_type, active = details
-            
-            URL_SHORTENERS[provider_key] = {
-                'name': name,
-                'api_url': api_url,
-                'api_token': api_token,
-                'format': format_type,
-                'active': active == '1'
-            }
-            
-            return await query.message.edit_text(f"<b>✅ Provider '{name}' updated successfully!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-            
-        except ListenerTimeout:
-            return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
-        
     except ListenerTimeout:
-        return await query.message.edit_text("<b>Timeout, try again!</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('◂ ʙᴀᴄᴋ', 'url_shorteners')]]))
+        return await query.message.edit_text("<b>⌚ Timeout, try again!</b>", reply_markup=back_kb)
+
+    choice = res.text.strip()
+    provider_key = None
+    for key, p in URL_SHORTENERS.items():
+        if p.get('number') == choice or key == choice:
+            provider_key = key
+            break
+
+    if not provider_key:
+        return await query.message.edit_text(f"<b>❌ Provider '<code>{choice}</code>' not found!</b>", reply_markup=back_kb)
+
+    provider = URL_SHORTENERS[provider_key]
+
+    # STEP 1 — new title
+    await query.message.edit_text(
+        f"<b>Editing: <code>{provider['name']}</code>\n\n"
+        f"Step 1/3 — Send new title (or send <code>-</code> to skip)\n"
+        f"Example: <code>Shortxlinks</code></b>",
+        reply_markup=back_kb
+    )
+    try:
+        r1 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+    except ListenerTimeout:
+        return await query.message.edit_text("<b>⌚ Timeout!</b>", reply_markup=back_kb)
+    new_name = r1.text.strip()
+    if new_name and new_name != "-":
+        provider['name'] = new_name
+
+    # STEP 2 — new site URL
+    await query.message.edit_text(
+        f"<b>Step 2/3 — Send new site URL (or <code>-</code> to skip)\n"
+        f"Current: <code>{provider['api_url']}</code></b>",
+        reply_markup=back_kb
+    )
+    try:
+        r2 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+    except ListenerTimeout:
+        return await query.message.edit_text("<b>⌚ Timeout!</b>", reply_markup=back_kb)
+    new_url = r2.text.strip()
+    if new_url and new_url != "-":
+        if not new_url.lower().startswith("https://"):
+            return await query.message.edit_text(
+                "<b>❌ URL must start with <code>https://</code></b>",
+                reply_markup=back_kb
+            )
+        provider['api_url'] = new_url
+
+    # STEP 3 — new API token
+    await query.message.edit_text(
+        f"<b>Step 3/3 — Send new API token (or <code>-</code> to skip)\n"
+        f"Current: <code>{provider.get('api_token', '')[:12]}...</code></b>",
+        reply_markup=back_kb
+    )
+    try:
+        r3 = await client.listen(user_id=query.from_user.id, filters=filters.text, timeout=60)
+    except ListenerTimeout:
+        return await query.message.edit_text("<b>⌚ Timeout!</b>", reply_markup=back_kb)
+    new_token = r3.text.strip()
+    if new_token and new_token != "-":
+        provider['api_token'] = new_token
+
+    return await query.message.edit_text(
+        f"<b>✅ Provider updated successfully!\n\n"
+        f"📌 Number   : <code>{provider.get('number', '-')}</code>\n"
+        f"🏷️ Title    : <code>{provider['name']}</code>\n"
+        f"🔗 Site URL : <code>{provider['api_url']}</code>\n"
+        f"🔑 API Token: <code>{provider.get('api_token', '')[:12]}...</code>\n"
+        f"📄 Status   : {'✅ Active' if provider.get('active') else '❌ Inactive'}</b>",
+        reply_markup=back_kb
+    )
 
 
 @Client.on_callback_query(filters.regex("^toggle_shortener$"))
