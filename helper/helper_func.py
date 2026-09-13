@@ -11,6 +11,7 @@ from pyrogram import errors
 from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
 from helper.font_converter import to_small_caps as sc
 
+
 async def shorten_url(long_url: str) -> str:
     """
     Shorten URL using configured URL shortener services
@@ -19,18 +20,17 @@ async def shorten_url(long_url: str) -> str:
     for provider_key, provider_config in URL_SHORTENERS.items():
         if not provider_config.get('active', False):
             continue
-            
+
         try:
             api_url = provider_config['api_url']
             api_token = provider_config.get('api_token', '')
-            format_param = provider_config.get('format', 'text')
-            
+
             params = {
                 'api': api_token,
                 'url': long_url,
-                'format': format_param
+                'format': 'text'
             }
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.get(api_url, params=params, timeout=10) as response:
                     if response.status == 200:
@@ -41,9 +41,10 @@ async def shorten_url(long_url: str) -> str:
         except Exception as e:
             print(f"Error with {provider_key}: {e}")
             continue
-    
+
     # If all providers fail, return original URL
     return long_url
+
 
 async def encode(string):
     string_bytes = string.encode("utf-8")
@@ -51,24 +52,29 @@ async def encode(string):
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
 
+
 async def decode(base64_string):
     base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
-    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
+    string_bytes = base64.urlsafe_b64decode(base64_bytes)
     string = string_bytes.decode("utf-8")
     return string
 
+
 import secrets as _secrets
 import string as _string
+
 
 def generate_token(length: int = 14) -> str:
     """Generate a cryptographically secure random token (URL-safe, alphanumeric only)."""
     alphabet = _string.ascii_letters + _string.digits
     return ''.join(_secrets.choice(alphabet) for _ in range(length))
 
+
 def is_token_format(s: str) -> bool:
     """Check if string looks like a new-style token (alphanumeric, 12-16 chars, no special chars)."""
     return s.isalnum() and 12 <= len(s) <= 16
+
 
 def generate_links(param: str, bot_username: str):
     """
@@ -81,11 +87,12 @@ def generate_links(param: str, bot_username: str):
         permanent_link = f"{WEBSITE_URL}?{WEBSITE_PARAM}={param}"
     return telegram_link, permanent_link
 
+
 async def get_messages(client, message_ids, chat_id=None):
     messages = []
     total_messages = 0
     while total_messages != len(message_ids):
-        temb_ids = message_ids[total_messages:total_messages+200]
+        temb_ids = message_ids[total_messages:total_messages + 200]
         msgs = []
         try:
             msgs = await client.get_messages(
@@ -98,10 +105,11 @@ async def get_messages(client, message_ids, chat_id=None):
                 chat_id=chat_id if chat_id else int(client.db),
                 message_ids=temb_ids
             )
-        
+
         total_messages += len(temb_ids)
         messages.extend(msgs)
     return messages
+
 
 async def get_message_id(client, message):
     # Get main DB channel ID
@@ -147,6 +155,7 @@ async def get_message_id(client, message):
         return 0, None
     return 0, None
 
+
 def get_readable_time(seconds: int) -> str:
     count = 0
     up_time = ""
@@ -168,6 +177,7 @@ def get_readable_time(seconds: int) -> str:
     up_time += ":".join(time_list)
     return up_time
 
+
 async def is_bot_admin(client, channel_id):
     try:
         bot = await client.get_chat_member(channel_id, "me")
@@ -180,6 +190,7 @@ async def is_bot_admin(client, channel_id):
         return False, "Bot lacks permission to access admin information in this channel."
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
+
 
 async def check_subscription(client, user_id):
     """Check if a user is subscribed to all required channels."""
@@ -222,7 +233,7 @@ def force_sub(func):
         photo = client.messages.get('FSUB_PHOTO', '')
         if photo:
             msg = await message.reply_photo(
-                caption="<code>Checking subscription...</code>", 
+                caption="<code>Checking subscription...</code>",
                 photo=photo
             )
         else:
@@ -268,7 +279,7 @@ def force_sub(func):
                 channel_link = invite.invite_link
             if not is_joined:
                 buttons.append(InlineKeyboardButton(channel_name, url=channel_link))
-        
+
         # Add "Try Again" button if needed
         from_link = message.text.split(" ")
         if len(from_link) > 1:
@@ -286,6 +297,7 @@ def force_sub(func):
 
     return wrapper
 
+
 async def delete_files(messages, client, k, enter):
     auto_del = client.auto_del
     if auto_del > 0:
@@ -300,7 +312,7 @@ async def delete_files(messages, client, k, enter):
                     client.LOGGER(__name__, client.name).warning(f"The attempt to delete the media {getattr(msg, 'id', 'Unknown')} was unsuccessful: {e}")
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
-        
+
         # Edit the warning message (k) to show completion (don't delete it)
         try:
             await k.edit_text(
