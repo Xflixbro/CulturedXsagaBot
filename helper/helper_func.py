@@ -1,6 +1,13 @@
+# ============================================================
+# helper_func.py  — FULL FIXED VERSION
+# Shortener now supports {api} / {url} / {format} placeholders
+# ============================================================
+
 import base64
 import re
+import json                      # NEW
 import asyncio
+import urllib.parse              # NEW
 import aiohttp
 from pyrogram import filters, Client, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,64 +18,111 @@ from pyrogram import errors
 from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
 from helper.font_converter import to_small_caps as sc
 
+
+# ============================================================
+#  URL SHORTENER  (FIXED)
+# ============================================================
 async def shorten_url(long_url: str) -> str:
     """
-    Shorten URL using configured URL shortener services
-    Returns shortened URL or original URL if shortening fails
+    Shorten URL using configured URL shortener services.
+    Supports BOTH styles:
+      - template style: https://site.com/api?api={api}&url={url}&format=text
+      - plain style:    https://site.com/api   (params appended automatically)
     """
+    encoded_url = urllib.parse.quote(long_url, safe='')
+
     for provider_key, provider_config in URL_SHORTENERS.items():
         if not provider_config.get('active', False):
             continue
-            
+
         try:
-            api_url = provider_config['api_url']
-            api_token = provider_config.get('api_token', '')
+            api_url      = provider_config['api_url'].strip()
+            api_token    = provider_config.get('api_token', '')
             format_param = provider_config.get('format', 'text')
-            
-            params = {
-                'api': api_token,
-                'url': long_url,
-                'format': format_param
-            }
-            
+
+            # --- ensure scheme ---
+            if not api_url.startswith(('http://', 'https://')):
+                api_url = 'https://' + api_url
+
+            # --- build final URL ---
+            if '{api}' in api_url or '{url}' in api_url or '{format}' in api_url:
+                # template mode
+                final_url = (api_url
+                             .replace('{api}', api_token)
+                             .replace('{url}', encoded_url)
+                             .replace('{format}', format_param))
+                params = None
+            else:
+                # plain mode (legacy)
+                final_url = api_url
+                params = {
+                    'api': api_token,
+                    'url': long_url,
+                    'format': format_param,
+                }
+
             async with aiohttp.ClientSession() as session:
-                async with session.get(api_url, params=params, timeout=10) as response:
-                    if response.status == 200:
-                        short_url = await response.text()
-                        short_url = short_url.strip()
-                        if short_url and short_url.startswith('http'):
-                            return short_url
+                async with session.get(final_url, params=params, timeout=15) as response:
+                    text = (await response.text()).strip()
+                    print(f"[SHORTENER:{provider_key}] status={response.status} body={text[:120]!r}")
+
+                    if response.status == 200 and text.startswith('http'):
+                        return text
+
+                    # some providers return JSON even when format=text
+                    if text.startswith('{'):
+                        try:
+                            data = json.loads(text)
+                            for k in ('shortenedUrl', 'short_url', 'shorten_url',
+                                      'url', 'link', 'result', 'short'):
+                                if isinstance(data, dict) and data.get(k) and str(data[k]).startswith('http'):
+                                    return data[k]
+                        except Exception:
+                            pass
+
         except Exception as e:
-            print(f"Error with {provider_key}: {e}")
+            print(f"[SHORTENER:{provider_key}] ERROR: {e}")
             continue
-    
-    # If all providers fail, return original URL
+
+    # All providers failed → return original (fallback)
     return long_url
 
+
+# ============================================================
+#  BASE64 HELPERS
+# ============================================================
 async def encode(string):
     string_bytes = string.encode("utf-8")
     base64_bytes = base64.urlsafe_b64encode(string_bytes)
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
 
+
 async def decode(base64_string):
     base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
-    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
+    string_bytes = base64.urlsafe_b64decode(base64_bytes)
     string = string_bytes.decode("utf-8")
     return string
 
+
+# ============================================================
+#  TOKEN HELPERS
+# ============================================================
 import secrets as _secrets
 import string as _string
+
 
 def generate_token(length: int = 14) -> str:
     """Generate a cryptographically secure random token (URL-safe, alphanumeric only)."""
     alphabet = _string.ascii_letters + _string.digits
     return ''.join(_secrets.choice(alphabet) for _ in range(length))
 
+
 def is_token_format(s: str) -> bool:
     """Check if string looks like a new-style token (alphanumeric, 12-16 chars, no special chars)."""
     return s.isalnum() and 12 <= len(s) <= 16
+
 
 def generate_links(param: str, bot_username: str):
     """
@@ -81,6 +135,10 @@ def generate_links(param: str, bot_username: str):
         permanent_link = f"{WEBSITE_URL}?{WEBSITE_PARAM}={param}"
     return telegram_link, permanent_link
 
+
+# ============================================================
+#  GET MESSAGES / MESSAGE ID
+# ============================================================
 async def get_messages(client, message_ids, chat_id=None):
     messages = []
     total_messages = 0
@@ -98,10 +156,11 @@ async def get_messages(client, message_ids, chat_id=None):
                 chat_id=chat_id if chat_id else int(client.db),
                 message_ids=temb_ids
             )
-        
+
         total_messages += len(temb_ids)
         messages.extend(msgs)
     return messages
+
 
 async def get_message_id(client, message):
     # Get main DB channel ID
@@ -147,6 +206,10 @@ async def get_message_id(client, message):
         return 0, None
     return 0, None
 
+
+# ============================================================
+#  TIME / ADMIN / SUBSCRIPTION HELPERS
+# ============================================================
 def get_readable_time(seconds: int) -> str:
     count = 0
     up_time = ""
@@ -168,6 +231,7 @@ def get_readable_time(seconds: int) -> str:
     up_time += ":".join(time_list)
     return up_time
 
+
 async def is_bot_admin(client, channel_id):
     try:
         bot = await client.get_chat_member(channel_id, "me")
@@ -180,6 +244,7 @@ async def is_bot_admin(client, channel_id):
         return False, "Bot lacks permission to access admin information in this channel."
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
+
 
 async def check_subscription(client, user_id):
     """Check if a user is subscribed to all required channels."""
@@ -222,7 +287,7 @@ def force_sub(func):
         photo = client.messages.get('FSUB_PHOTO', '')
         if photo:
             msg = await message.reply_photo(
-                caption="<code>Checking subscription...</code>", 
+                caption="<code>Checking subscription...</code>",
                 photo=photo
             )
         else:
@@ -251,12 +316,9 @@ def force_sub(func):
         for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
             status = statuses.get(channel_id, None)
             emoji = status_emojis.get(status, "❓")
-            # Check if user is joined (member, admin, or owner)
             is_joined = status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
-            # Use small caps for status text with bold
             status_text = f"<b>{sc('Joined')}</b>" if is_joined else f"<b>{sc('Not Joined')}</b>"
             c += 1
-            # Format: number (bold), channel name (bold), status text (bold small caps), emoji at the end
             channels_message += f"<b>{c}.</b> <b>{channel_name}</b> - {status_text} {emoji}\n"
             if timer > 0:
                 expire_time = datetime.now() + timedelta(minutes=timer)
@@ -268,7 +330,7 @@ def force_sub(func):
                 channel_link = invite.invite_link
             if not is_joined:
                 buttons.append(InlineKeyboardButton(channel_name, url=channel_link))
-        
+
         # Add "Try Again" button if needed
         from_link = message.text.split(" ")
         if len(from_link) > 1:
@@ -286,12 +348,12 @@ def force_sub(func):
 
     return wrapper
 
+
 async def delete_files(messages, client, k, enter):
     auto_del = client.auto_del
     if auto_del > 0:
         await asyncio.sleep(auto_del)
 
-        # Delete all messages in the list (files and restricted warning only)
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -300,8 +362,7 @@ async def delete_files(messages, client, k, enter):
                     client.LOGGER(__name__, client.name).warning(f"The attempt to delete the media {getattr(msg, 'id', 'Unknown')} was unsuccessful: {e}")
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
-        
-        # Edit the warning message (k) to show completion (don't delete it)
+
         try:
             await k.edit_text(
                 "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
