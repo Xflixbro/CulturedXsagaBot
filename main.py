@@ -1,5 +1,13 @@
-
 import asyncio
+
+# ================================================================
+# FIX for Python 3.14 + Pyrogram: create event loop BEFORE imports
+# ================================================================
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import json
 from bot import Bot, web_app
 from pyrogram import compose
@@ -66,4 +74,6 @@ async def runner():
         web_app()
     )
 
-asyncio.run(runner())
+
+if __name__ == "__main__":
+    asyncio.run(runner())
