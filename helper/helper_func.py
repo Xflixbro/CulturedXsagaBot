@@ -12,40 +12,101 @@ from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
 from helper.font_converter import to_small_caps as sc
 
 
+# =====================================================
+#  URL SHORTENER (FIXED)
+# =====================================================
 async def shorten_url(long_url: str) -> str:
     """
-    Shorten URL using configured URL shortener services
-    Returns shortened URL or original URL if shortening fails
+    Shorten URL using configured URL shortener services.
+    Returns shortened URL or original URL if shortening fails.
+    
+    FIX: Properly replaces {api} and {url} placeholders in the API URL template
+    instead of relying on aiohttp params (which does NOT do string replacement).
     """
     for provider_key, provider_config in URL_SHORTENERS.items():
         if not provider_config.get('active', False):
             continue
 
         try:
-            api_url = provider_config['api_url']
+            api_url_template = provider_config['api_url']
             api_token = provider_config.get('api_token', '')
+            format_param = provider_config.get('format', 'text')
 
-            params = {
-                'api': api_token,
-                'url': long_url,
-                'format': 'text'
-            }
+            # ---------------------------------------------------------
+            # STEP 1: Replace placeholders in the URL template
+            # Supports: {api}, {url}, {format}
+            # ---------------------------------------------------------
+            final_api_url = (
+                api_url_template
+                .replace('{api}', api_token)
+                .replace('{url}', long_url)
+                .replace('{format}', format_param)
+            )
 
+            # ---------------------------------------------------------
+            # STEP 2: Fallback — if {url} was NOT in the template,
+            # send it as a query parameter instead.
+            # ---------------------------------------------------------
+            params = {}
+            if '{url}' in api_url_template:
+                # Placeholder was used, no extra params needed
+                params = {}
+            else:
+                # No {url} placeholder → pass as query param
+                params['url'] = long_url
+                if '{api}' not in api_url_template:
+                    params['api'] = api_token
+                if 'format' not in api_url_template:
+                    params['format'] = format_param
+
+            # ---------------------------------------------------------
+            # STEP 3: Ensure URL has a scheme (https://)
+            # ---------------------------------------------------------
+            if not final_api_url.startswith(('http://', 'https://')):
+                final_api_url = 'https://' + final_api_url
+
+            # ---------------------------------------------------------
+            # STEP 4: Make the request
+            # ---------------------------------------------------------
             async with aiohttp.ClientSession() as session:
-                async with session.get(api_url, params=params, timeout=10) as response:
+                async with session.get(final_api_url, params=params, timeout=15) as response:
                     if response.status == 200:
                         short_url = await response.text()
                         short_url = short_url.strip()
+
+                        # Handle JSON responses: {"shortenedUrl": "..."} or {"short": "..."}
+                        if short_url.startswith('{'):
+                            try:
+                                import json
+                                data = json.loads(short_url)
+                                # Try common JSON keys
+                                for key in ('shortenedUrl', 'shortened_url', 'short', 'url', 'link', 'result'):
+                                    if key in data and isinstance(data[key], str):
+                                        short_url = data[key]
+                                        break
+                            except Exception:
+                                pass
+
+                        # Validate final URL
                         if short_url and short_url.startswith('http'):
+                            print(f"[Shortener] {provider_key} → {short_url}")
                             return short_url
+                        else:
+                            print(f"[Shortener] {provider_key} returned invalid response: {short_url[:100]}")
+                    else:
+                        print(f"[Shortener] {provider_key} HTTP {response.status}")
         except Exception as e:
-            print(f"Error with {provider_key}: {e}")
+            print(f"[Shortener] Error with {provider_key}: {e}")
             continue
 
     # If all providers fail, return original URL
+    print("[Shortener] All providers failed, returning original URL")
     return long_url
 
 
+# =====================================================
+#  ENCODE / DECODE
+# =====================================================
 async def encode(string):
     string_bytes = string.encode("utf-8")
     base64_bytes = base64.urlsafe_b64encode(string_bytes)
@@ -61,6 +122,9 @@ async def decode(base64_string):
     return string
 
 
+# =====================================================
+#  TOKEN HELPERS
+# =====================================================
 import secrets as _secrets
 import string as _string
 
@@ -88,6 +152,9 @@ def generate_links(param: str, bot_username: str):
     return telegram_link, permanent_link
 
 
+# =====================================================
+#  GET MESSAGES
+# =====================================================
 async def get_messages(client, message_ids, chat_id=None):
     messages = []
     total_messages = 0
@@ -111,6 +178,9 @@ async def get_messages(client, message_ids, chat_id=None):
     return messages
 
 
+# =====================================================
+#  GET MESSAGE ID
+# =====================================================
 async def get_message_id(client, message):
     # Get main DB channel ID
     main_channel = getattr(client, 'db_channel_id', client.db)
@@ -156,6 +226,9 @@ async def get_message_id(client, message):
     return 0, None
 
 
+# =====================================================
+#  READABLE TIME
+# =====================================================
 def get_readable_time(seconds: int) -> str:
     count = 0
     up_time = ""
@@ -178,6 +251,9 @@ def get_readable_time(seconds: int) -> str:
     return up_time
 
 
+# =====================================================
+#  BOT ADMIN CHECK
+# =====================================================
 async def is_bot_admin(client, channel_id):
     try:
         bot = await client.get_chat_member(channel_id, "me")
@@ -192,6 +268,9 @@ async def is_bot_admin(client, channel_id):
         return False, f"Unexpected error: {str(e)}"
 
 
+# =====================================================
+#  FORCE SUB CHECK
+# =====================================================
 async def check_subscription(client, user_id):
     """Check if a user is subscribed to all required channels."""
     statuses = {}
@@ -225,6 +304,9 @@ def is_user_subscribed(statuses):
     ) and bool(statuses)
 
 
+# =====================================================
+#  FORCE SUB DECORATOR
+# =====================================================
 def force_sub(func):
     """Decorator to enforce force subscription before executing a command."""
     async def wrapper(client: Client, message: Message):
@@ -262,12 +344,9 @@ def force_sub(func):
         for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
             status = statuses.get(channel_id, None)
             emoji = status_emojis.get(status, "❓")
-            # Check if user is joined (member, admin, or owner)
             is_joined = status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
-            # Use small caps for status text with bold
             status_text = f"<b>{sc('Joined')}</b>" if is_joined else f"<b>{sc('Not Joined')}</b>"
             c += 1
-            # Format: number (bold), channel name (bold), status text (bold small caps), emoji at the end
             channels_message += f"<b>{c}.</b> <b>{channel_name}</b> - {status_text} {emoji}\n"
             if timer > 0:
                 expire_time = datetime.now() + timedelta(minutes=timer)
@@ -298,6 +377,9 @@ def force_sub(func):
     return wrapper
 
 
+# =====================================================
+#  DELETE FILES
+# =====================================================
 async def delete_files(messages, client, k, enter):
     auto_del = client.auto_del
     if auto_del > 0:
@@ -309,7 +391,9 @@ async def delete_files(messages, client, k, enter):
                 try:
                     await client.delete_messages(chat_id=msg.chat.id, message_ids=[msg.id])
                 except Exception as e:
-                    client.LOGGER(__name__, client.name).warning(f"The attempt to delete the media {getattr(msg, 'id', 'Unknown')} was unsuccessful: {e}")
+                    client.LOGGER(__name__, client.name).warning(
+                        f"The attempt to delete the media {getattr(msg, 'id', 'Unknown')} was unsuccessful: {e}"
+                    )
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
 
