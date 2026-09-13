@@ -47,6 +47,11 @@ class Bot(Client):
         self.db_uri = db_uri  # Store for EnhancedCreditDB
         self.db_name = db_name  # Store for EnhancedCreditDB
         self.req_channels = []
+
+        # URL Shortener settings
+        self.shortner_enabled = False
+        self.short_url = None
+        self.short_api = None
     
     async def start(self):
         await super().start()
@@ -184,6 +189,17 @@ class Bot(Client):
                 self.LOGGER(__name__, self.name).info(f"Loaded Auto-Del settings from DB: {self.auto_del}s")
         except Exception as e:
              self.LOGGER(__name__, self.name).warning(f"Failed to load dynamic config: {e}")
+
+        # 🔗 Load URL shortener settings from DB
+        try:
+            self.shortner_enabled = await self.mongodb.get_bot_config('shortner_enabled', False)
+            self.short_url = await self.mongodb.get_bot_config('short_url', None)
+            self.short_api = await self.mongodb.get_bot_config('short_api', None)
+            self.LOGGER(__name__, self.name).info(
+                f"Shortener: enabled={self.shortner_enabled}, domain={self.short_url}"
+            )
+        except Exception as e:
+            self.LOGGER(__name__, self.name).warning(f"Failed to load shortener settings: {e}")
         
         try:
             asyncio.create_task(self._broadcast_ttl_worker())
