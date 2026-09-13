@@ -60,33 +60,16 @@ PROTECT_CONTENT = False
 # Disable share button
 DISABLE_BUTTON = False
 
-# URL Shortener Providers Configuration
-
+# AroLinks URL Shortener Configuration
 AROLINKS_API_TOKEN = "21ec65db4a55fdb5051aa3156cc012a9359587f9"
-SHORTXLINKS_API_TOKEN = "d5911095597018fad72bf9ad1df544163b1520db"
-EARNLINKS_API_TOKEN = "e4c8d70d9ce710b5863b9d281b637febdf5c5277"
+AROLINKS_API_URL = "https://arolinks.com"
 
+# URL Shortener Providers Configuration
 URL_SHORTENERS = {
     'arolinks': {
         'name': 'AroLinks',
-        'api_url': 'https://arolinks.com',
+        'api_url': 'https://arolinks.com/api',
         'api_token': AROLINKS_API_TOKEN,
-        'format': 'text',
-        'active': True
-    },
-
-    'shortxlinks': {
-        'name': 'ShortXLinks',
-        'api_url': 'https://shortxlinks.com',
-        'api_token': SHORTXLINKS_API_TOKEN,
-        'format': 'text',
-        'active': True
-    },
-
-    'earnlinks': {
-        'name': 'EarnLinks',
-        'api_url': 'https://earnlinks.in',
-        'api_token': EARNLINKS_API_TOKEN,
         'format': 'text',
         'active': True
     }
