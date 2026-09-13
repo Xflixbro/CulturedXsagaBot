@@ -60,17 +60,33 @@ PROTECT_CONTENT = False
 # Disable share button
 DISABLE_BUTTON = False
 
-
-# VPLink URL Shortener Configuration
-VPLINK_API_TOKEN = "akenamebepuresososebandhadhaga"
-VPLINK_API_URL = "example.com"
-
 # URL Shortener Providers Configuration
+
+AROLINKS_API_TOKEN = "21ec65db4a55fdb5051aa3156cc012a9359587f9"
+SHORTXLINKS_API_TOKEN = "d5911095597018fad72bf9ad1df544163b1520db"
+EARNLINKS_API_TOKEN = "e4c8d70d9ce710b5863b9d281b637febdf5c5277"
+
 URL_SHORTENERS = {
-    'vplink': {
-        'name': 'VPLink',
-        'api_url': 'https://vplink.in/api',
-        'api_token': VPLINK_API_TOKEN,
+    'arolinks': {
+        'name': 'AroLinks',
+        'api_url': 'https://arolinks.com',
+        'api_token': AROLINKS_API_TOKEN,
+        'format': 'text',
+        'active': True
+    },
+
+    'shortxlinks': {
+        'name': 'ShortXLinks',
+        'api_url': 'https://shortxlinks.com',
+        'api_token': SHORTXLINKS_API_TOKEN,
+        'format': 'text',
+        'active': True
+    },
+
+    'earnlinks': {
+        'name': 'EarnLinks',
+        'api_url': 'https://earnlinks.in',
+        'api_token': EARNLINKS_API_TOKEN,
         'format': 'text',
         'active': True
     }
