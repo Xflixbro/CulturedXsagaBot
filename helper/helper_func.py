@@ -8,44 +8,42 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, Forbidden, PeerIdInvalid, ChatAdminRequired, FloodWait
 from datetime import datetime, timedelta
 from pyrogram import errors
-from config import PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
+from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
 from helper.font_converter import to_small_caps as sc
 
-
-async def shorten_url(long_url: str, client=None) -> str:
-    """Shorten URL using the configured single shortener (client.short_url + client.short_api)."""
-    if client is None:
-        return long_url
-
-    if not getattr(client, 'shortner_enabled', False):
-        return long_url
-
-    short_domain = getattr(client, 'short_url', None)
-    api_key = getattr(client, 'short_api', None)
-    if not short_domain or not api_key:
-        return long_url
-
-    try:
-        import secrets as _s
-        alias = _s.token_urlsafe(6).replace('-', '').replace('_', '')[:8]
-        api_url = f"https://{short_domain}/api?api={api_key}&url={long_url}&alias={alias}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(api_url, timeout=10) as response:
-                if response.status == 200:
-                    try:
-                        data = await response.json()
-                        if isinstance(data, dict) and data.get("status") == "success":
-                            return data.get("shortenedUrl", long_url)
-                    except Exception:
-                        text = (await response.text()).strip()
-                        if text.startswith('http'):
-                            return text
-    except Exception as e:
-        print(f"[Shortener Error] {e}")
-
+async def shorten_url(long_url: str) -> str:
+    """
+    Shorten URL using configured URL shortener services
+    Returns shortened URL or original URL if shortening fails
+    """
+    for provider_key, provider_config in URL_SHORTENERS.items():
+        if not provider_config.get('active', False):
+            continue
+            
+        try:
+            api_url = provider_config['api_url']
+            api_token = provider_config.get('api_token', '')
+            format_param = provider_config.get('format', 'text')
+            
+            params = {
+                'api': api_token,
+                'url': long_url,
+                'format': format_param
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, params=params, timeout=10) as response:
+                    if response.status == 200:
+                        short_url = await response.text()
+                        short_url = short_url.strip()
+                        if short_url and short_url.startswith('http'):
+                            return short_url
+        except Exception as e:
+            print(f"Error with {provider_key}: {e}")
+            continue
+    
+    # If all providers fail, return original URL
     return long_url
-
 
 async def encode(string):
     string_bytes = string.encode("utf-8")
@@ -53,44 +51,41 @@ async def encode(string):
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
 
-
 async def decode(base64_string):
     base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
-    string_bytes = base64.urlsafe_b64decode(base64_bytes)
+    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
     string = string_bytes.decode("utf-8")
     return string
 
-
 import secrets as _secrets
 import string as _string
-
 
 def generate_token(length: int = 14) -> str:
     """Generate a cryptographically secure random token (URL-safe, alphanumeric only)."""
     alphabet = _string.ascii_letters + _string.digits
     return ''.join(_secrets.choice(alphabet) for _ in range(length))
 
-
 def is_token_format(s: str) -> bool:
     """Check if string looks like a new-style token (alphanumeric, 12-16 chars, no special chars)."""
     return s.isalnum() and 12 <= len(s) <= 16
 
-
 def generate_links(param: str, bot_username: str):
-    """Generate both Telegram and permanent (website) links for a given parameter."""
+    """
+    Generate both Telegram and permanent (website) links for a given parameter.
+    Returns: (telegram_link, permanent_link or None)
+    """
     telegram_link = f"https://t.me/{bot_username}?start={param}"
     permanent_link = None
     if PERMANENT_LINKS and WEBSITE_URL:
         permanent_link = f"{WEBSITE_URL}?{WEBSITE_PARAM}={param}"
     return telegram_link, permanent_link
 
-
 async def get_messages(client, message_ids, chat_id=None):
     messages = []
     total_messages = 0
     while total_messages != len(message_ids):
-        temb_ids = message_ids[total_messages:total_messages + 200]
+        temb_ids = message_ids[total_messages:total_messages+200]
         msgs = []
         try:
             msgs = await client.get_messages(
@@ -103,17 +98,20 @@ async def get_messages(client, message_ids, chat_id=None):
                 chat_id=chat_id if chat_id else int(client.db),
                 message_ids=temb_ids
             )
-
+        
         total_messages += len(temb_ids)
         messages.extend(msgs)
     return messages
 
-
 async def get_message_id(client, message):
+    # Get main DB channel ID
     main_channel = getattr(client, 'db_channel_id', client.db)
+    # Get extra DB channels from MongoDB
     extra_channels = await client.mongodb.get_db_channels() if hasattr(client, 'mongodb') else []
+    # Combine all valid DB channels
     all_db_channels = [main_channel] + extra_channels
 
+    # Support for Pyrogram v2 (forward_origin)
     if hasattr(message, 'forward_origin') and message.forward_origin:
         if message.forward_origin.type == "channel":
             fwd_chat_id = message.forward_origin.chat.id
@@ -123,6 +121,7 @@ async def get_message_id(client, message):
             else:
                 return 0, None
 
+    # Support for Pyrogram v1 (forward_from_chat)
     if message.forward_from_chat:
         if message.forward_from_chat.id in all_db_channels:
             return message.forward_from_message_id, message.forward_from_chat.id
@@ -148,7 +147,6 @@ async def get_message_id(client, message):
         return 0, None
     return 0, None
 
-
 def get_readable_time(seconds: int) -> str:
     count = 0
     up_time = ""
@@ -170,7 +168,6 @@ def get_readable_time(seconds: int) -> str:
     up_time += ":".join(time_list)
     return up_time
 
-
 async def is_bot_admin(client, channel_id):
     try:
         bot = await client.get_chat_member(channel_id, "me")
@@ -183,7 +180,6 @@ async def is_bot_admin(client, channel_id):
         return False, "Bot lacks permission to access admin information in this channel."
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
-
 
 async def check_subscription(client, user_id):
     """Check if a user is subscribed to all required channels."""
@@ -226,7 +222,7 @@ def force_sub(func):
         photo = client.messages.get('FSUB_PHOTO', '')
         if photo:
             msg = await message.reply_photo(
-                caption="<code>Checking subscription...</code>",
+                caption="<code>Checking subscription...</code>", 
                 photo=photo
             )
         else:
@@ -240,6 +236,7 @@ def force_sub(func):
             await msg.delete()
             return await func(client, message)
 
+        # User is not subscribed to all channels
         buttons = []
         channels_message = f"{client.messages.get('FSUB', '')}\n\n<b>ᴄʜᴀɴɴᴇʟ ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ꜱᴛᴀᴛᴜꜱ:</b>\n\n"
 
@@ -254,9 +251,12 @@ def force_sub(func):
         for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
             status = statuses.get(channel_id, None)
             emoji = status_emojis.get(status, "❓")
+            # Check if user is joined (member, admin, or owner)
             is_joined = status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
+            # Use small caps for status text with bold
             status_text = f"<b>{sc('Joined')}</b>" if is_joined else f"<b>{sc('Not Joined')}</b>"
             c += 1
+            # Format: number (bold), channel name (bold), status text (bold small caps), emoji at the end
             channels_message += f"<b>{c}.</b> <b>{channel_name}</b> - {status_text} {emoji}\n"
             if timer > 0:
                 expire_time = datetime.now() + timedelta(minutes=timer)
@@ -268,14 +268,17 @@ def force_sub(func):
                 channel_link = invite.invite_link
             if not is_joined:
                 buttons.append(InlineKeyboardButton(channel_name, url=channel_link))
-
+        
+        # Add "Try Again" button if needed
         from_link = message.text.split(" ")
         if len(from_link) > 1:
             try_again_link = f"https://t.me/{client.username}/?start={from_link[1]}"
             buttons.append(InlineKeyboardButton("🔄 Try Again!", url=try_again_link))
 
+        # Organize buttons in rows of 2
         buttons_markup = InlineKeyboardMarkup([buttons[i:i + 2] for i in range(0, len(buttons), 2)])
         buttons_markup = None if not buttons else buttons_markup
+        # Edit message with status update and buttons
         try:
             await msg.edit_text(text=channels_message, reply_markup=buttons_markup)
         except Exception as e:
@@ -283,12 +286,12 @@ def force_sub(func):
 
     return wrapper
 
-
 async def delete_files(messages, client, k, enter):
     auto_del = client.auto_del
     if auto_del > 0:
         await asyncio.sleep(auto_del)
 
+        # Delete all messages in the list (files and restricted warning only)
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -297,7 +300,8 @@ async def delete_files(messages, client, k, enter):
                     client.LOGGER(__name__, client.name).warning(f"The attempt to delete the media {getattr(msg, 'id', 'Unknown')} was unsuccessful: {e}")
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
-
+        
+        # Edit the warning message (k) to show completion (don't delete it)
         try:
             await k.edit_text(
                 "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
