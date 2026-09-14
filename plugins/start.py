@@ -97,6 +97,11 @@ async def start_command(client: Client, message: Message):
     
     is_premium_user = await client.mongodb.is_premium(user_id)
 
+    # ✅ EDIT 1: Save the real premium status (never changes during this request)
+    actual_premium_user = is_premium_user
+    # ✅ EDIT 1: Flag - did the user just arrive via a verified shortener token?
+    verified_via_token = False
+
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     credit_data = await enhanced_db.get_credits(user_id)
     user_credits = credit_data.get("balance", 0)
@@ -219,7 +224,8 @@ async def start_command(client: Client, message: Message):
                             f"📂 <b>{sc('sending your file now...')}</b>"
                         )
 
-                    is_premium_user = True
+                    # ✅ EDIT 2: Mark this request as shortener-verified (DO NOT set is_premium_user = True)
+                    verified_via_token = True
 
         from helper.helper_func import is_token_format
         
@@ -302,8 +308,8 @@ async def start_command(client: Client, message: Message):
                 f"{sc('remaining credits')}: {user_credits}"
             )
 
-        # ✅ FIXED: removed "and not restricted" so restricted links also get shortener
-        if not is_premium_user and token_verification_enabled:
+        # ✅ EDIT 3: Shortener now works for restricted links too (only skip if already verified)
+        if not is_premium_user and token_verification_enabled and not verified_via_token:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
             
             content_name = ""
@@ -385,7 +391,9 @@ async def start_command(client: Client, message: Message):
             
         await temp_msg.delete()
 
-        use_protect = restricted and not is_premium_user
+        # ✅ EDIT 4: Use actual_premium_user (not is_premium_user) so a shortener solve or credit-spend
+        # does NOT grant forward/save rights on restricted files.
+        use_protect = restricted and not actual_premium_user
         
         yugen_msgs = []
         for msg in valid_messages:
@@ -408,7 +416,7 @@ async def start_command(client: Client, message: Message):
                 client.LOGGER(__name__, client.name).warning(f"Failed to copy message {msg.id}: {e}")
 
         restricted_warning_msg = None
-        if restricted and not is_premium_user and yugen_msgs:
+        if restricted and not actual_premium_user and yugen_msgs:
             restricted_warning_msg = await client.send_message(
                 user_id,
                 f"🔒 **{sc('restricted file')}**\n\n{sc('you cannot forward or save this file because it is restricted. premium users can forward/save.')}"
