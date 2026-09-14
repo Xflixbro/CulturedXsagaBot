@@ -302,7 +302,8 @@ async def start_command(client: Client, message: Message):
                 f"{sc('remaining credits')}: {user_credits}"
             )
 
-        if not is_premium_user and token_verification_enabled and not restricted:
+        # ✅ FIXED: removed "and not restricted" so restricted links also get shortener
+        if not is_premium_user and token_verification_enabled:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
             
             content_name = ""
