@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 LOG_FILE_NAME = "bot.log"
 PORT = '8000'
 OWNER_ID = 8741514787
-MSG_EFFECT = 5046509860389126442
+MSG_EFFECT = 5046500389126442
 
 # BOT CONFIGURATION
 # ===========================
@@ -39,7 +39,7 @@ FORCE_SUB_CHANNELS = []  # Example: [-1001234567890, -1009876543210]
 # ===========================
 
 # Admin User IDs (can use admin commands)
-ADMINS = [6048003536, 821215952, 8365451390]  # Example: [123456789, 987654321]
+ADMINS = [6048003536, 821215952, 8365451390]
 
 # ===========================
 # SERVER (Optional)
@@ -79,20 +79,40 @@ URL_SHORTENERS = {
 # PERMANENT LINK SYSTEM
 # ===========================
 
-# Permanent Link System - Works even if bot gets banned
 PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
 WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://oggyflix.vercel.app/")
 WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 
 # BYPASS ATTEMPT MEDIA
 # ===========================
-# Media to display when a bypass attempt is detected.
-# Can be a single URL or multiple space-separated URLs.
-# Supported: images (jpg, jpeg, png, webp) and videos/animations (mp4, gif, webm).
-# Videos will be sent as animations (GIF-like) automatically.
 BYPASS_ATTEMPT_MEDIA = "https://videotourl.com/videos/1788160021118-5b825ba1-c273-4df3-9c10-1649b6c73ee7.mp4 https://i.postimg.cc/4ykP3SHc/IMG-20250927-131101-178.jpg"
 
 MYPLAN_IMG = "https://i.postimg.cc/L6D7Vzcm/46Lv-Lz-MD19tzyo-Pc7HUf4PPvi62.jpg"
+
+# ===========================
+# SUPREME GATEWAY CONFIG
+# ===========================
+# Enable/disable the Supreme Gateway layer
+SUPREME_ENABLED = os.environ.get("SUPREME_ENABLED", "True") == "True"
+
+# Base URL of your deployed Vercel Supreme Gateway
+SUPREME_BASE_URL = os.environ.get("SUPREME_BASE_URL", "https://oggyflix.vercel.app")
+
+# Path prefix for the gateway (must match vercel.json rewrite)
+SUPREME_GATEWAY_PATH = os.environ.get("SUPREME_GATEWAY_PATH", "/access")
+
+# Session Time-To-Live in seconds (default 30 minutes)
+SUPREME_SESSION_TTL = int(os.environ.get("SUPREME_SESSION_TTL", "1800"))
+
+# CRITICAL: Shared HMAC secret. MUST match the Vercel frontend env var exactly.
+SUPREME_SECRET_KEY = os.environ.get(
+    "SUPREME_SECRET_KEY",
+    "CHANGE_ME_TO_A_LONG_RANDOM_STRING_64_CHARS_MIN"
+)
+
+# Fallback Telegram URL shown on the Bypass screen
+SUPREME_TELEGRAM_URL = os.environ.get("SUPREME_TELEGRAM_URL", "https://t.me/eonxstBot")
+
 
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
