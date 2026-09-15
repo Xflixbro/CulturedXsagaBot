@@ -19,9 +19,6 @@ async def shorten_url(long_url: str) -> str:
     """
     Shorten URL using configured URL shortener services.
     Returns shortened URL or original URL if shortening fails.
-    
-    FIX: Properly replaces {api} and {url} placeholders in the API URL template
-    instead of relying on aiohttp params (which does NOT do string replacement).
     """
     for provider_key, provider_config in URL_SHORTENERS.items():
         if not provider_config.get('active', False):
@@ -32,10 +29,6 @@ async def shorten_url(long_url: str) -> str:
             api_token = provider_config.get('api_token', '')
             format_param = provider_config.get('format', 'text')
 
-            # ---------------------------------------------------------
-            # STEP 1: Replace placeholders in the URL template
-            # Supports: {api}, {url}, {format}
-            # ---------------------------------------------------------
             final_api_url = (
                 api_url_template
                 .replace('{api}', api_token)
@@ -43,43 +36,29 @@ async def shorten_url(long_url: str) -> str:
                 .replace('{format}', format_param)
             )
 
-            # ---------------------------------------------------------
-            # STEP 2: Fallback — if {url} was NOT in the template,
-            # send it as a query parameter instead.
-            # ---------------------------------------------------------
             params = {}
             if '{url}' in api_url_template:
-                # Placeholder was used, no extra params needed
                 params = {}
             else:
-                # No {url} placeholder → pass as query param
                 params['url'] = long_url
                 if '{api}' not in api_url_template:
                     params['api'] = api_token
                 if 'format' not in api_url_template:
                     params['format'] = format_param
 
-            # ---------------------------------------------------------
-            # STEP 3: Ensure URL has a scheme (https://)
-            # ---------------------------------------------------------
             if not final_api_url.startswith(('http://', 'https://')):
                 final_api_url = 'https://' + final_api_url
 
-            # ---------------------------------------------------------
-            # STEP 4: Make the request
-            # ---------------------------------------------------------
             async with aiohttp.ClientSession() as session:
                 async with session.get(final_api_url, params=params, timeout=15) as response:
                     if response.status == 200:
                         short_url = await response.text()
                         short_url = short_url.strip()
 
-                        # Handle JSON responses: {"shortenedUrl": "..."} or {"short": "..."}
                         if short_url.startswith('{'):
                             try:
                                 import json
                                 data = json.loads(short_url)
-                                # Try common JSON keys
                                 for key in ('shortenedUrl', 'shortened_url', 'short', 'url', 'link', 'result'):
                                     if key in data and isinstance(data[key], str):
                                         short_url = data[key]
@@ -87,7 +66,6 @@ async def shorten_url(long_url: str) -> str:
                             except Exception:
                                 pass
 
-                        # Validate final URL
                         if short_url and short_url.startswith('http'):
                             print(f"[Shortener] {provider_key} → {short_url}")
                             return short_url
@@ -99,7 +77,6 @@ async def shorten_url(long_url: str) -> str:
             print(f"[Shortener] Error with {provider_key}: {e}")
             continue
 
-    # If all providers fail, return original URL
     print("[Shortener] All providers failed, returning original URL")
     return long_url
 
@@ -130,13 +107,11 @@ import string as _string
 
 
 def generate_token(length: int = 14) -> str:
-    """Generate a cryptographically secure random token (URL-safe, alphanumeric only)."""
     alphabet = _string.ascii_letters + _string.digits
     return ''.join(_secrets.choice(alphabet) for _ in range(length))
 
 
 def is_token_format(s: str) -> bool:
-    """Check if string looks like a new-style token (alphanumeric, 12-16 chars, no special chars)."""
     return s.isalnum() and 12 <= len(s) <= 16
 
 
@@ -182,14 +157,10 @@ async def get_messages(client, message_ids, chat_id=None):
 #  GET MESSAGE ID
 # =====================================================
 async def get_message_id(client, message):
-    # Get main DB channel ID
     main_channel = getattr(client, 'db_channel_id', client.db)
-    # Get extra DB channels from MongoDB
     extra_channels = await client.mongodb.get_db_channels() if hasattr(client, 'mongodb') else []
-    # Combine all valid DB channels
     all_db_channels = [main_channel] + extra_channels
 
-    # Support for Pyrogram v2 (forward_origin)
     if hasattr(message, 'forward_origin') and message.forward_origin:
         if message.forward_origin.type == "channel":
             fwd_chat_id = message.forward_origin.chat.id
@@ -199,7 +170,6 @@ async def get_message_id(client, message):
             else:
                 return 0, None
 
-    # Support for Pyrogram v1 (forward_from_chat)
     if message.forward_from_chat:
         if message.forward_from_chat.id in all_db_channels:
             return message.forward_from_message_id, message.forward_from_chat.id
@@ -272,7 +242,6 @@ async def is_bot_admin(client, channel_id):
 #  FORCE SUB CHECK
 # =====================================================
 async def check_subscription(client, user_id):
-    """Check if a user is subscribed to all required channels."""
     statuses = {}
 
     for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
@@ -297,7 +266,6 @@ async def check_subscription(client, user_id):
 
 
 def is_user_subscribed(statuses):
-    """Check if user is subscribed to all channels."""
     return all(
         status in {ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER}
         for status in statuses.values() if status is not None
@@ -308,7 +276,6 @@ def is_user_subscribed(statuses):
 #  FORCE SUB DECORATOR
 # =====================================================
 def force_sub(func):
-    """Decorator to enforce force subscription before executing a command."""
     async def wrapper(client: Client, message: Message):
         if not client.fsub_dict:
             return await func(client, message)
@@ -329,7 +296,6 @@ def force_sub(func):
             await msg.delete()
             return await func(client, message)
 
-        # User is not subscribed to all channels
         buttons = []
         channels_message = f"{client.messages.get('FSUB', '')}\n\n<b>ᴄʜᴀɴɴᴇʟ ꜱᴜʙꜱᴄʀɪᴘᴛɪᴏɴ ꜱᴛᴀᴛᴜꜱ:</b>\n\n"
 
@@ -359,16 +325,13 @@ def force_sub(func):
             if not is_joined:
                 buttons.append(InlineKeyboardButton(channel_name, url=channel_link))
 
-        # Add "Try Again" button if needed
         from_link = message.text.split(" ")
         if len(from_link) > 1:
             try_again_link = f"https://t.me/{client.username}/?start={from_link[1]}"
             buttons.append(InlineKeyboardButton("🔄 Try Again!", url=try_again_link))
 
-        # Organize buttons in rows of 2
         buttons_markup = InlineKeyboardMarkup([buttons[i:i + 2] for i in range(0, len(buttons), 2)])
         buttons_markup = None if not buttons else buttons_markup
-        # Edit message with status update and buttons
         try:
             await msg.edit_text(text=channels_message, reply_markup=buttons_markup)
         except Exception as e:
@@ -385,7 +348,6 @@ async def delete_files(messages, client, k, enter):
     if auto_del > 0:
         await asyncio.sleep(auto_del)
 
-        # Delete all messages in the list (files and restricted warning only)
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -397,7 +359,6 @@ async def delete_files(messages, client, k, enter):
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
 
-        # Edit the warning message (k) to show completion (don't delete it)
         try:
             await k.edit_text(
                 "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
