@@ -1,5 +1,9 @@
 # Made by @Awakeners_Bots
 # GitHub: https://github.com/Awakener_Bots
+#
+# Supreme Gateway — Session signing, validation, and URL wrapping.
+# This module is destination-agnostic: it wraps ANY valid HTTPS URL
+# (AroLinks shortener, other shorteners, raw t.me links, permanent links, etc.)
 
 import hmac
 import hashlib
@@ -10,6 +14,9 @@ from urllib.parse import urlparse
 from config import SUPREME_SECRET_KEY, SUPREME_SESSION_TTL
 
 
+# ---------------------------------------------------------
+#  BASE64 URL-SAFE HELPERS
+# ---------------------------------------------------------
 def _base64_url_encode(data: str) -> str:
     """URL-safe base64 encoding without padding."""
     return base64.urlsafe_b64encode(data.encode()).decode().rstrip("=")
@@ -21,20 +28,20 @@ def _base64_url_decode(data: str) -> str:
     return base64.urlsafe_b64decode(data.encode()).decode()
 
 
+# ---------------------------------------------------------
+#  DESTINATION SAFETY CHECK
+# ---------------------------------------------------------
 def _is_safe_destination(url: str) -> bool:
     """
-    Validate that the destination URL is safe to redirect to.
-    Only allows https:// (and optionally http://) schemes.
+    Only allow http:// and https:// destinations.
     Rejects javascript:, data:, file:, vbscript:, etc.
     """
     if not url or not isinstance(url, str):
         return False
     try:
         parsed = urlparse(url.strip())
-        # Only allow http and https. Prefer https.
         if parsed.scheme not in ("https", "http"):
             return False
-        # Must have a network location (domain)
         if not parsed.netloc:
             return False
         return True
@@ -42,14 +49,16 @@ def _is_safe_destination(url: str) -> bool:
         return False
 
 
-def generate_supreme_session(destination_url: str) -> str:
+# ---------------------------------------------------------
+#  SESSION GENERATION & VERIFICATION
+# ---------------------------------------------------------
+def generate_supreme_session(destination_b64: str) -> str:
     """
-    Generates a signed session token.
-    Payload contains the destination URL and expiration timestamp.
-    Format: base64(payload).signature
+    Returns: base64(payload).signature
+    payload = {"url": <base64 dest>, "exp": <unix ts>, "iat": <unix ts>}
     """
     payload = {
-        "url": destination_url,
+        "url": destination_b64,
         "exp": int(time.time()) + SUPREME_SESSION_TTL,
         "iat": int(time.time())
     }
@@ -65,10 +74,7 @@ def generate_supreme_session(destination_url: str) -> str:
 
 
 def verify_supreme_session(token: str) -> dict | None:
-    """
-    Verifies the session token signature and expiration.
-    Returns the payload dictionary if valid, None otherwise.
-    """
+    """Verify signature + expiry. Returns payload dict or None."""
     try:
         parts = token.split(".")
         if len(parts) != 2:
@@ -85,8 +91,7 @@ def verify_supreme_session(token: str) -> dict | None:
         if not hmac.compare_digest(signature, expected_sig):
             return None
 
-        payload_json = _base64_url_decode(payload_b64)
-        payload = json.loads(payload_json)
+        payload = json.loads(_base64_url_decode(payload_b64))
 
         if time.time() > payload.get("exp", 0):
             return None
@@ -96,23 +101,19 @@ def verify_supreme_session(token: str) -> dict | None:
         return None
 
 
+# ---------------------------------------------------------
+#  UNIVERSAL SUPREME URL WRAPPER
+# ---------------------------------------------------------
 def generate_supreme_url(destination_url: str) -> str:
     """
-    Universal Supreme Gateway wrapper.
-    Accepts ANY valid HTTPS destination (AroLinks, any shortener,
-    direct t.me link, permanent website link, etc.) and wraps it
-    in the Supreme Gateway URL.
-
-    If SUPREME_ENABLED is False, returns the destination unchanged.
-    If the destination is invalid/unsafe, returns it unchanged
-    (fail-open so we never break a working link).
+    Wrap ANY valid HTTPS destination in the Supreme Gateway URL.
+    Fails open (returns original) if Supreme is disabled or dest is unsafe.
     """
     from config import SUPREME_ENABLED, SUPREME_BASE_URL, SUPREME_GATEWAY_PATH
 
     if not SUPREME_ENABLED:
         return destination_url
 
-    # Safety: never wrap a non-http(s) URL
     if not _is_safe_destination(destination_url):
         return destination_url
 
