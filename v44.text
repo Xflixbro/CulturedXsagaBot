@@ -1,0 +1,952 @@
+TELEGRAM FILESTORE BOT — "SUPREME VERSION" URL GATEWAY UPGRADE
+
+I want you to upgrade my existing Telegram FileStore bot with a new "SUPREME VERSION" URL Gateway system.
+
+IMPORTANT — INSPECT BEFORE CODING
+
+DO NOT START CODING UNTIL YOU HAVE FULLY INSPECTED AND UNDERSTOOD MY EXISTING CODE.
+
+I will provide/upload my existing repository files.
+
+My existing bot files are:
+
+requirements.txt
+main.py
+config.py
+bot.py
+database.py
+channel_post.py
+batch_handler.py
+helper_func.py
+settings.py
+route.py
+link_generator.py
+start.py
+
+First inspect all provided files and understand how the current system works.
+
+Do not guess about the existing architecture.
+
+---
+
+ALLOWED NEW FILE — "antiguard.py"
+
+I am making one change to the previous requirements:
+
+✅ "antiguard.py" IS ALLOWED.
+
+You may create:
+
+antiguard.py
+
+Use it only if it is genuinely useful for organizing the Supreme anti-abuse/session-validation logic.
+
+❌ DO NOT CREATE:
+
+supremelink.py
+supreme.py
+security_gateway.py
+
+Do not create any other unnecessary Python modules.
+
+The Supreme Gateway frontend remains a SEPARATE Vercel project/repository.
+
+Do not restructure my existing Telegram bot repository.
+
+Do not remove, rename, or unnecessarily rewrite existing functionality.
+
+---
+
+CURRENT WORKING URL FLOW
+
+My current bot flow works like this:
+
+Telegram
+↓
+https://t.me/eonxstBot?start=97Yrb9emhfxGfU
+↓
+https://oggyflix.vercel.app/?Neostart=97Yrb9emhfxGfU
+↓
+URL Shortener
+↓
+https://arolinks.com/QjaJX
+
+This existing system works.
+
+CRITICAL
+
+DO NOT BREAK OLD LINKS.
+
+Existing:
+
+- "Neostart"
+- "/start"
+- Base64
+- FileStore logic
+- batch handling
+- channel-post logic
+- existing shortener functionality
+
+must remain compatible.
+
+The Supreme system is an additional layer, not a complete replacement of the existing architecture.
+
+---
+
+NEW SUPREME FLOW
+
+I want the new flow to work like this:
+
+Telegram Bot
+↓
+Supreme Gateway
+↓
+Security Gateway
+↓
+Browser Verification
+↓
+Syncing
+↓
+3-second verification
+↓
+Access Granted
+↓
+Proceed
+↓
+Routing Securely
+↓
+URL Shortener
+↓
+Final Destination
+
+Example Supreme URL:
+
+https://oggyflix.vercel.app/access/4bd372a220e2?url=aHR0cHM6Ly9hcm9saW5rcy5jb20vWXJMblJ6NHA=
+
+The "url" parameter is Base64 encoded.
+
+Decoded:
+
+https://arolinks.com/YrLnRz4p
+
+The gateway must dynamically decode and process this destination.
+
+DO NOT hardcode:
+
+YrLnRz4p
+
+Every generated link will contain a different shortener URL.
+
+---
+
+SUPREME GATEWAY UI
+
+I have provided screenshots showing the style I want.
+
+Analyze the screenshots carefully before implementing the frontend.
+
+The design should include:
+
+- Dark navy/black futuristic background
+- Glowing particles/stars
+- Large rounded central card
+- Thin cyan/teal glowing border
+- Circular anime profile image
+- Cyan neon ring around profile
+- Dotted/segmented outer ring
+- Neon glow
+- Futuristic typography
+- Letter spacing
+- Large uppercase headings
+- Smooth animations
+- Mobile-first layout
+- Excellent Android Chrome appearance
+
+The screenshots are primarily mobile screenshots around:
+
+691 × 1536
+
+The final UI must work correctly on:
+
+360px
+390px
+412px
+430px
+768px+
+Desktop
+
+There must be:
+
+- No horizontal scrolling
+- Responsive sizing
+- Smooth mobile performance
+
+---
+
+SCREEN 1 — SECURITY GATEWAY
+
+Initial page:
+
+SECURITY
+GATEWAY
+
+Verification required to establish a
+secure tunnel. Automated scripts are
+restricted.
+
+[ VERIFY IDENTITY ]
+
+The button should be:
+
+- Bright cyan
+- Rounded
+- Neon glow
+- Smooth hover/touch effect
+- Press animation
+
+---
+
+VERIFICATION SEQUENCE
+
+When the user presses:
+
+VERIFY IDENTITY
+
+show an animated verification process.
+
+Stage 1
+
+SECURITY GATEWAY
+
+Verification required to establish a
+secure tunnel. Automated scripts are
+restricted.
+
+[ VERIFYING... 3 ]
+
+Then:
+
+VERIFYING... 2
+
+Then:
+
+VERIFYING... 1
+
+Stage 2
+
+VERIFYING BROWSER
+
+Please wait while we establish a secure
+connection...
+
+Use a shield icon and subtle animation.
+
+Stage 3
+
+SYNCING SECURE SESSION...
+
+Stage 4
+
+ACCESS GRANTED
+
+Redirecting to Telegram...
+
+Show terminal-style text such as:
+
+> Authenticating secure session...
+> Establishing connection to <dynamic destination/session>...
+
+The destination/session information must be dynamically generated.
+
+Stage 5
+
+[ ROUTING SECURELY... ]
+
+Then redirect to the validated destination.
+
+---
+
+NO FAKE SECURITY CLAIMS
+
+Do not falsely claim that the system is:
+
+- Cloudflare
+- Google
+- Turnstile
+- reCAPTCHA
+- Any other third-party security provider
+
+unless that service is actually integrated.
+
+The visual design may use terminology such as:
+
+- SECURE SESSION
+- SECURE ROUTING
+- BROWSER VERIFICATION
+- SECURITY GATEWAY
+
+But these should represent the application's own security/session process.
+
+Do not implement invasive fingerprinting.
+
+Do not collect unnecessary personal information.
+
+The verification should be a legitimate application-level session/anti-abuse mechanism.
+
+---
+
+SESSION SYSTEM
+
+The Supreme URL format must be:
+
+/access/<session_id>?url=<base64_destination>
+
+Example:
+
+/access/4bd372a220e2?url=aHR0cHM6Ly9hcm9saW5rcy5jb20vWXJMblJ6NHA=
+
+The session must contain or represent:
+
+session_id
+destination
+created_at
+verification_status
+expires_at
+
+Use cryptographically secure random session IDs.
+
+DO NOT:
+
+- Use predictable IDs
+- Trust client-side verification parameters
+- Trust "?verified=true"
+- Trust "?access_granted=true"
+- Allow verification to be bypassed by changing URL parameters
+
+Use server-side validation/signing where appropriate.
+
+---
+
+RECENTLY OPENED VALID SESSION
+
+A recently opened valid Supreme URL should remain valid for a configurable short period.
+
+For example:
+
+https://oggyflix.vercel.app/access/<same-session>?url=...
+
+If the session was recently verified, the user can continue without unnecessarily repeating the entire verification process.
+
+However:
+
+- Sessions must expire
+- Sessions must not be permanent
+- Do not use unlimited cookies
+- Expired sessions must require verification again
+- Session TTL must be configurable
+
+Example:
+
+SUPREME_SESSION_TTL = 1800
+
+---
+
+BYPASS / INVALID REQUEST SCREEN
+
+If an invalid or expired request is detected, show a screen similar to my screenshot:
+
+🤡 BYPASS
+DETECTED
+
+We've detected an invalid or automated link
+bypass attempt.
+
+Security Violation
+
+🔐
+
+Session Expired or Direct Bypass
+Tool Detected.
+
+Then show:
+
+Click here [TG]
+
+The Telegram button must use a configurable Telegram URL.
+
+DO NOT hardcode the Telegram URL.
+
+---
+
+BYPASS / ANTI-ABUSE VALIDATION
+
+Implement reasonable application-level anti-abuse validation.
+
+Detect obvious invalid states such as:
+
+- Missing destination
+- Invalid Base64
+- Malformed URL
+- Invalid session
+- Expired session
+- Invalid session signature
+- Direct access to protected routes without a valid session
+- Manipulated verification state
+- Obviously invalid gateway parameters
+
+Do not claim JavaScript can perfectly detect every bot.
+
+Do not use invasive fingerprinting.
+
+Do not collect unnecessary user information.
+
+---
+
+BASE64 HANDLING
+
+The gateway receives:
+
+?url=<base64>
+
+Example:
+
+aHR0cHM6Ly9hcm9saW5rcy5jb20vWXJMblJ6NHA=
+
+Decode safely.
+
+Support:
+
+- Standard Base64
+- URL-safe Base64 where appropriate
+- Missing padding
+- URL encoding
+- Invalid Base64 detection
+- Invalid UTF-8 detection
+- Empty destination detection
+
+If decoding fails, show:
+
+INVALID LINK
+
+Do not redirect.
+
+---
+
+DESTINATION VALIDATION
+
+After decoding, validate the destination URL.
+
+Allow legitimate HTTPS destinations.
+
+Reject dangerous schemes such as:
+
+javascript:
+data:
+file:
+vbscript:
+
+Do not blindly redirect arbitrary schemes.
+
+Do not allow XSS through the decoded URL.
+
+Preserve query parameters in valid destinations.
+
+Example:
+
+https://arolinks.com/YrLnRz4p?requos=app://org.telegram.plus.oggyflix.vercel.app&ris=gt
+
+Treat this as the complete destination URL.
+
+Do not truncate or incorrectly modify its query parameters.
+
+---
+
+AROLINKS
+
+Current example:
+
+https://arolinks.com/YrLnRz4p
+
+The gateway must dynamically redirect to whatever valid shortener URL was supplied.
+
+NEVER hardcode the shortener code.
+
+For example, do not hardcode:
+
+YrLnRz4p
+QjaJX
+
+Every generated URL may have a different code.
+
+---
+
+TELEGRAM DESTINATIONS
+
+The system may use destinations such as:
+
+https://t.me/...
+
+or Telegram-compatible links.
+
+Preserve the actual destination.
+
+Do not assume every destination is Telegram.
+
+The gateway should validate the URL scheme and safely redirect to the supplied valid destination.
+
+---
+
+BOT INTEGRATION
+
+When Supreme mode is enabled, the Telegram bot should generate the Supreme Gateway URL instead of directly exposing the shortened URL.
+
+Conceptually:
+
+Original destination
+↓
+Existing URL shortener
+↓
+Shortener URL
+↓
+Base64 encode shortener URL
+↓
+Generate cryptographically secure session ID
+↓
+Supreme URL
+↓
+Send Supreme URL to Telegram
+
+Example:
+
+Shortener:
+
+https://arolinks.com/YrLnRz4p
+
+Base64:
+
+aHR0cHM6Ly9hcm9saW5rcy5jb20vWXJMblJ6NHA=
+
+Final:
+
+https://oggyflix.vercel.app/access/<secure-session-id>?url=<base64>
+
+The session ID must be dynamically generated.
+
+Do not use predictable session IDs.
+
+---
+
+EXISTING LINKS MUST CONTINUE WORKING
+
+Existing links such as:
+
+https://oggyflix.vercel.app/?Neostart=97Yrb9emhfxGfU
+
+must continue working.
+
+Do not remove or break:
+
+Neostart
+/start
+Base64 handling
+FileStore logic
+batch logic
+channel-post logic
+existing shortener functionality
+
+Supreme mode should be an additional layer.
+
+---
+
+CONFIGURATION
+
+If configuration is needed, use my existing:
+
+config.py
+
+Do not create another configuration file.
+
+Possible configuration:
+
+SUPREME_ENABLED = True
+
+SUPREME_BASE_URL = "https://oggyflix.vercel.app"
+
+SUPREME_SESSION_TTL = 1800
+
+SUPREME_GATEWAY_PATH = "/access"
+
+SUPREME_TELEGRAM_URL = "https://t.me/..."
+
+Use environment variables for secrets.
+
+Do not put:
+
+- API keys
+- Bot tokens
+- Database credentials
+- Other secrets
+
+into frontend JavaScript.
+
+---
+
+VERCEL ARCHITECTURE
+
+The Supreme Gateway is hosted as a SEPARATE Vercel project/repository.
+
+It should support:
+
+/
+
+/access/<session_id>?url=<base64>
+
+and:
+
+/s/<token>
+
+if "/s/" is already required by the existing system.
+
+Do not put Vercel-specific frontend files into my Telegram bot repository.
+
+Do not modify my bot repository structure just to accommodate the Vercel frontend.
+
+---
+
+EXISTING /s/ LINKS
+
+My existing system can generate links such as:
+
+https://oggyflix.vercel.app/s/NGJkMzcyYTIyMGUyfE5lenVrb19LYW1hZG9fRmlsZV9Sb0JvdHx5dTNlbGtaMlYwTFRJMk1qa3hOREkxTlRNNU5UTTJOemd3Tw
+
+Do not randomly change this token format.
+
+Preserve compatibility with the existing "/s/" route.
+
+---
+
+PERFORMANCE
+
+The gateway may be used heavily from mobile devices.
+
+Keep it lightweight.
+
+Avoid:
+
+- Huge frameworks unless genuinely required
+- Excessive JavaScript
+- Continuous polling
+- Heavy animations
+- Expensive browser fingerprinting
+- Unnecessary API calls
+- Large assets
+
+Animations should remain smooth on low-end Android devices.
+
+Respect:
+
+prefers-reduced-motion
+
+---
+
+FILES ALLOWED TO MODIFY IN BOT REPOSITORY
+
+Existing files that may be modified:
+
+requirements.txt
+main.py
+config.py
+bot.py
+database.py
+channel_post.py
+batch_handler.py
+helper_func.py
+settings.py
+route.py
+link_generator.py
+start.py
+
+NEW FILE ALLOWED:
+
+antiguard.py
+
+Only create "antiguard.py" if needed.
+
+DO NOT CREATE:
+
+supremelink.py
+supreme.py
+security_gateway.py
+
+Do not create unnecessary additional Python modules.
+
+---
+
+BEFORE CODING — REQUIRED INSPECTION
+
+First inspect every repository file I provide.
+
+Understand exactly:
+
+1. How the bot starts
+2. How Telegram "/start" parameters are processed
+3. How links are generated
+4. How the existing URL shortener is called
+5. How Base64 is currently handled
+6. How database/session information is stored
+7. How "batch_handler.py" works
+8. How "route.py" works
+9. How "link_generator.py" works
+10. How existing "Neostart" links work
+11. How existing "/s/" links work
+12. Where the safest integration point for Supreme mode is
+
+Do not guess.
+
+Do not rewrite working code unnecessarily.
+
+Make the smallest safe changes possible.
+
+---
+
+REQUIRED RESPONSE AFTER INSPECTION
+
+After inspecting my repository, provide:
+
+1. Existing architecture
+
+Give a short explanation of how my current bot works.
+
+2. Supreme integration point
+
+Explain exactly where the Supreme system should be integrated.
+
+3. Changed files
+
+List EXACTLY which existing files need modification.
+
+Also state whether "antiguard.py" is required and why.
+
+Do not modify files unnecessarily.
+
+4. Complete bot code
+
+Provide COMPLETE updated code for every changed bot file.
+
+Do not provide incomplete snippets when a full file replacement is required.
+
+5. Separate Vercel implementation
+
+Clearly separate:
+
+Telegram Bot
+
+from:
+
+Supreme Gateway — Separate Vercel Project
+
+Provide the complete Vercel implementation.
+
+Do not place the Vercel project inside my Telegram bot repository.
+
+6. Vercel deployment
+
+Explain exactly how to deploy the Supreme Gateway to Vercel.
+
+7. Environment variables
+
+Explain every required environment variable and where it belongs.
+
+Never expose secrets in frontend JavaScript.
+
+8. Supreme URL generation
+
+Explain exactly how the bot generates:
+
+Shortener URL
+↓
+Base64 destination
+↓
+Secure session ID
+↓
+Supreme URL
+
+9. Session validation
+
+Explain how the gateway validates:
+
+- Session ID
+- Destination
+- Signature
+- Verification status
+- Expiration
+- Request validity
+
+10. Recently verified sessions
+
+Explain how recently verified sessions work and how the TTL is enforced.
+
+11. Expired sessions
+
+Explain what happens when a session expires.
+
+12. Invalid/bypass requests
+
+Explain how invalid requests are detected and how the bypass screen is shown.
+
+13. Old links
+
+Explain exactly how existing:
+
+Neostart
+/start
+Base64
+/s/
+
+links continue working.
+
+14. Testing checklist
+
+Provide a complete testing checklist covering:
+
+- New Supreme links
+- Old links
+- Base64
+- URL-safe Base64
+- Missing padding
+- Invalid Base64
+- Invalid UTF-8
+- Empty destination
+- HTTPS validation
+- Dangerous schemes
+- Query parameters
+- Session expiration
+- Recently verified sessions
+- Invalid sessions
+- Tampered sessions
+- Missing parameters
+- Direct "/access/" requests
+- "/s/" compatibility
+- Android Chrome
+- 360px / 390px / 412px / 430px
+- Tablet
+- Desktop
+- Reduced-motion mode
+- Multiple users
+- Concurrent sessions
+
+---
+
+FINAL EXPECTED FLOW
+
+The finished system should behave like:
+
+USER
+↓
+Telegram Bot
+↓
+Supreme Gateway URL
+↓
+SECURITY GATEWAY
+↓
+VERIFY IDENTITY
+↓
+VERIFYING BROWSER
+↓
+SYNCING SECURE SESSION
+↓
+VERIFYING... 3
+↓
+VERIFYING... 2
+↓
+VERIFYING... 1
+↓
+ACCESS GRANTED
+↓
+PROCEED
+↓
+ROUTING SECURELY...
+↓
+https://arolinks.com/<dynamic-code>
+↓
+Existing destination
+
+Invalid/expired request:
+
+USER
+↓
+SUPREME GATEWAY
+↓
+BYPASS DETECTED
+↓
+SECURITY VIOLATION
+↓
+Click here [TG]
+
+---
+
+NON-NEGOTIABLE RULES
+
+❌ DO NOT:
+
+- Create "supremelink.py"
+- Create "supreme.py"
+- Create "security_gateway.py"
+- Create unnecessary Python modules
+- Break my existing bot
+- Remove old Base64 support
+- Remove "Neostart" support
+- Remove "/start" functionality
+- Break "/s/" compatibility
+- Hardcode AroLinks codes
+- Hardcode session IDs
+- Use predictable session IDs
+- Expose API keys
+- Expose bot tokens
+- Trust "?verified=true"
+- Trust client-side verification flags
+- Blindly redirect arbitrary schemes
+- Add invasive fingerprinting
+- Collect unnecessary personal information
+- Replace my entire architecture
+- Rewrite working code without a reason
+- Put the Vercel frontend inside my Telegram bot repository
+
+✅ MUST:
+
+- Inspect the existing code first
+- Understand the existing architecture before coding
+- Preserve existing functionality
+- Use existing Python files where possible
+- Use "antiguard.py" only when genuinely required
+- Keep the Supreme Gateway separate on Vercel
+- Dynamically generate Supreme URLs
+- Dynamically generate secure session IDs
+- Safely encode/decode destinations
+- Validate destinations
+- Use expiring sessions
+- Support recently valid sessions
+- Support old links
+- Preserve existing "/s/" links
+- Preserve "Neostart"
+- Preserve "/start"
+- Preserve existing Base64 handling
+- Validate sessions server-side
+- Prevent simple client-side verification bypasses
+- Keep security claims honest
+- Reproduce the supplied screenshot style
+- Optimize for Android
+- Keep the gateway lightweight
+- Respect "prefers-reduced-motion"
+- Provide complete code for every changed file
+- Clearly separate bot code and Vercel code
+- Explain deployment and configuration
+- Provide a complete testing checklist
+
+MOST IMPORTANT
+
+Do not write any code until you have received and inspected my repository files.
+
+First understand what already exists.
+
+Then make the minimum necessary changes to add the Supreme Gateway without breaking the existing FileStore system.
