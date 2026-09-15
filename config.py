@@ -107,7 +107,7 @@ SUPREME_SESSION_TTL = int(os.environ.get("SUPREME_SESSION_TTL", "1800"))
 # CRITICAL: Shared HMAC secret. MUST match the Vercel frontend env var exactly.
 SUPREME_SECRET_KEY = os.environ.get(
     "SUPREME_SECRET_KEY",
-    "CHANGE_ME_TO_A_LONG_RANDOM_STRING_64_CHARS_MIN"
+    "7f3a9c2e1b8d4f6a5e0c9b7d3a1f8e2c4b6d9a0f3e5c7b1d8a2f4e6c9b0d3a5f"
 )
 
 # Fallback Telegram URL shown on the Bypass screen
