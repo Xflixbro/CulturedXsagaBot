@@ -89,8 +89,6 @@ BYPASS_ATTEMPT_MEDIA = "https://videotourl.com/videos/1788160021118-5b825ba1-c27
 
 MYPLAN_IMG = "https://i.postimg.cc/L6D7Vzcm/46Lv-Lz-MD19tzyo-Pc7HUf4PPvi62.jpg"
 
-# SUPREME GA = os.environ.get("SUPREME_TELEGRAM_URL", "https://t.me/eonxstBot")
-
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     formatter = logging.Formatter(
