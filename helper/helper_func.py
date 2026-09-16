@@ -1,6 +1,10 @@
+# Made by @Awakeners_Bots
+# helper_func.py
+
 import base64
 import re
 import asyncio
+import random
 import aiohttp
 from pyrogram import filters, Client, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -13,17 +17,16 @@ from helper.font_converter import to_small_caps as sc
 
 
 # =====================================================
-#  URL SHORTENER (FIXED)
+#  URL SHORTENER — random active provider
 # =====================================================
 async def shorten_url(long_url: str) -> str:
-    """
-    Shorten URL using configured URL shortener services.
-    Returns shortened URL or original URL if shortening fails.
-    """
-    for provider_key, provider_config in URL_SHORTENERS.items():
-        if not provider_config.get('active', False):
-            continue
+    """Shorten URL using a randomly selected active provider."""
+    active = [(k, v) for k, v in URL_SHORTENERS.items() if v.get('active', False)]
+    if not active:
+        return long_url
 
+    random.shuffle(active)
+    for provider_key, provider_config in active:
         try:
             api_url_template = provider_config['api_url']
             api_token = provider_config.get('api_token', '')
@@ -35,11 +38,8 @@ async def shorten_url(long_url: str) -> str:
                 .replace('{url}', long_url)
                 .replace('{format}', format_param)
             )
-
             params = {}
-            if '{url}' in api_url_template:
-                params = {}
-            else:
+            if '{url}' not in api_url_template:
                 params['url'] = long_url
                 if '{api}' not in api_url_template:
                     params['api'] = api_token
@@ -52,32 +52,26 @@ async def shorten_url(long_url: str) -> str:
             async with aiohttp.ClientSession() as session:
                 async with session.get(final_api_url, params=params, timeout=15) as response:
                     if response.status == 200:
-                        short_url = await response.text()
-                        short_url = short_url.strip()
-
+                        short_url = (await response.text()).strip()
                         if short_url.startswith('{'):
                             try:
                                 import json
                                 data = json.loads(short_url)
-                                for key in ('shortenedUrl', 'shortened_url', 'short', 'url', 'link', 'result'):
+                                for key in ('shortenedUrl', 'shortened_url', 'short',
+                                            'url', 'link', 'result'):
                                     if key in data and isinstance(data[key], str):
                                         short_url = data[key]
                                         break
                             except Exception:
                                 pass
-
                         if short_url and short_url.startswith('http'):
                             print(f"[Shortener] {provider_key} → {short_url}")
                             return short_url
-                        else:
-                            print(f"[Shortener] {provider_key} returned invalid response: {short_url[:100]}")
-                    else:
-                        print(f"[Shortener] {provider_key} HTTP {response.status}")
         except Exception as e:
-            print(f"[Shortener] Error with {provider_key}: {e}")
+            print(f"[Shortener] {provider_key} error: {e}")
             continue
 
-    print("[Shortener] All providers failed, returning original URL")
+    print("[Shortener] all failed, returning original")
     return long_url
 
 
@@ -116,10 +110,6 @@ def is_token_format(s: str) -> bool:
 
 
 def generate_links(param: str, bot_username: str):
-    """
-    Generate both Telegram and permanent (website) links for a given parameter.
-    Returns: (telegram_link, permanent_link or None)
-    """
     telegram_link = f"https://t.me/{bot_username}?start={param}"
     permanent_link = None
     if PERMANENT_LINKS and WEBSITE_URL:
@@ -147,7 +137,6 @@ async def get_messages(client, message_ids, chat_id=None):
                 chat_id=chat_id if chat_id else int(client.db),
                 message_ids=temb_ids
             )
-
         total_messages += len(temb_ids)
         messages.extend(msgs)
     return messages
@@ -167,14 +156,12 @@ async def get_message_id(client, message):
             fwd_msg_id = message.forward_origin.message_id
             if fwd_chat_id in all_db_channels:
                 return fwd_msg_id, fwd_chat_id
-            else:
-                return 0, None
+            return 0, None
 
     if message.forward_from_chat:
         if message.forward_from_chat.id in all_db_channels:
             return message.forward_from_message_id, message.forward_from_chat.id
-        else:
-            return 0, None
+        return 0, None
     elif message.forward_sender_name:
         return 0, None
     elif message.text:
@@ -243,7 +230,6 @@ async def is_bot_admin(client, channel_id):
 # =====================================================
 async def check_subscription(client, user_id):
     statuses = {}
-
     for channel_id, (channel_name, channel_link, request, timer) in client.fsub_dict.items():
         if request:
             send_req = await client.mongodb.is_user_in_channel(channel_id, user_id)
@@ -261,7 +247,6 @@ async def check_subscription(client, user_id):
         except Exception as e:
             client.LOGGER(__name__, client.name).warning(f"Error checking {channel_name}: {e}")
             statuses[channel_id] = None
-
     return statuses
 
 
@@ -286,9 +271,7 @@ def force_sub(func):
                 photo=photo
             )
         else:
-            msg = await message.reply(
-                "<code>Checking subscription...</code>"
-            )
+            msg = await message.reply("<code>Checking subscription...</code>")
         user_id = message.from_user.id
         statuses = await check_subscription(client, user_id)
 
@@ -347,7 +330,6 @@ async def delete_files(messages, client, k, enter):
     auto_del = client.auto_del
     if auto_del > 0:
         await asyncio.sleep(auto_del)
-
         for msg in messages:
             if msg and msg.chat:
                 try:
@@ -358,7 +340,6 @@ async def delete_files(messages, client, k, enter):
                     )
             else:
                 client.LOGGER(__name__, client.name).warning("Encountered an empty or deleted message.")
-
         try:
             await k.edit_text(
                 "<b><i>⏰ Time is over\nYour files has been deleted ✅</i></b>",
