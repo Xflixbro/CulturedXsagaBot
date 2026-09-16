@@ -91,16 +91,27 @@ async def send_masked_link(
 ) -> dict:
     from helper.helper_func import shorten_url
 
-    bot_link = f"https://t.me/{client.username}?start={file_token}"
-    shortener_url = await shorten_url(bot_link)
-
     masked = await create_masked_link(
         client=client,
         user_id=message.from_user.id,
         original_base64=file_token,
-        shortener_url=shortener_url,
+        shortener_url="",   # will be set after shortening
         is_batch=is_batch,
         restricted=restricted,
+    )
+
+    # Build deep link with file_token + hex_token + access_token
+    bot_link = (
+        f"https://t.me/{client.username}"
+        f"?start={file_token}_{masked['hex_token']}_{masked['access_token']}"
+    )
+
+    shortener_url = await shorten_url(bot_link)
+
+    # Store the real shortener URL back into the record
+    await client.mongodb.masked_links.update_one(
+        {"_id": masked["hex_token"]},
+        {"$set": {"shortener_url": shortener_url}},
     )
 
     return {
