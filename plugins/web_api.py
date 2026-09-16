@@ -46,10 +46,10 @@ async def verify_token(request):
         })
 
     # ══════════════════════════════════════════════════════
-    #  Global Verification check:
-    #  - ENABLED  → status OK → frontend runs normal verify + shortener
-    #  - DISABLED → status DISABLED + bot_link → frontend shows verify
-    #               but redirects STRAIGHT to bot (skip shortener)
+    #  Global Verification check.
+    #  - ENABLED  → status OK  → frontend runs verify + shortener
+    #  - DISABLED → status DISABLED + bot_username + file_token
+    #               → frontend runs verify, then sends to bot
     # ══════════════════════════════════════════════════════
     verification_enabled = await _bot_client.mongodb.get_bot_config(
         'token_verification_enabled', True
@@ -59,7 +59,8 @@ async def verify_token(request):
         return web.json_response({
             "status": "DISABLED",
             "reason": "Verification disabled",
-            "bot_link": link_data.get("bot_link"),
+            "bot_username": _bot_client.username,
+            "file_token": link_data.get("original_base64") or "",
         })
 
     return web.json_response({"status": "OK"})
