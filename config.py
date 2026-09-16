@@ -89,30 +89,7 @@ BYPASS_ATTEMPT_MEDIA = "https://videotourl.com/videos/1788160021118-5b825ba1-c27
 
 MYPLAN_IMG = "https://i.postimg.cc/L6D7Vzcm/46Lv-Lz-MD19tzyo-Pc7HUf4PPvi62.jpg"
 
-# ===========================
-# SUPREME GATEWAY CONFIG
-# ===========================
-# Enable/disable the Supreme Gateway layer
-SUPREME_ENABLED = os.environ.get("SUPREME_ENABLED", "True") == "True"
-
-# Base URL of your deployed Vercel Supreme Gateway
-SUPREME_BASE_URL = os.environ.get("SUPREME_BASE_URL", "https://oggyflix.vercel.app")
-
-# Path prefix for the gateway (must match vercel.json rewrite)
-SUPREME_GATEWAY_PATH = os.environ.get("SUPREME_GATEWAY_PATH", "/access")
-
-# Session Time-To-Live in seconds (default 30 minutes)
-SUPREME_SESSION_TTL = int(os.environ.get("SUPREME_SESSION_TTL", "1800"))
-
-# CRITICAL: Shared HMAC secret. MUST match the Vercel frontend env var exactly.
-SUPREME_SECRET_KEY = os.environ.get(
-    "SUPREME_SECRET_KEY",
-    "7f3a9c2e1b8d4f6a5e0c9b7d3a1f8e2c4b6d9a0f3e5c7b1d8a2f4e6c9b0d3a5f"
-)
-
-# Fallback Telegram URL shown on the Bypass screen
-SUPREME_TELEGRAM_URL = os.environ.get("SUPREME_TELEGRAM_URL", "https://t.me/eonxstBot")
-
+# SUPREME GA = os.environ.get("SUPREME_TELEGRAM_URL", "https://t.me/eonxstBot")
 
 def LOGGER(name: str, client_name: str) -> logging.Logger:
     logger = logging.getLogger(name)
