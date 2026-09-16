@@ -8,11 +8,10 @@ from pyrogram import Client
 
 # =====================================================
 #  CONFIG
-# MIN_SOLVE_TIME = 25
 # =====================================================
 GATEWAY_BASE_URL = "https://oggyflix2.vercel.app"
 
-MIN_SOLVE_TIME = 1
+MIN_SOLVE_TIME = 25
 ACCESS_TOKEN_EXPIRY_MINUTES = 10
 
 
@@ -57,7 +56,6 @@ async def create_masked_link(
         "user_id": user_id,
         "original_base64": original_base64,
         "shortener_url": shortener_url,
-        "bot_link": shortener_url,   # fallback (will be overridden by send_masked_link)
         "access_token": access_token,
         "is_batch": is_batch,
         "restricted": restricted,
@@ -119,13 +117,12 @@ async def send_masked_link(
     # 3. shorten it
     shortener_url = await shorten_url(bot_link)
 
-    # 4. store record with real shortener URL AND the bot link
+    # 4. store record with real shortener URL
     await client.mongodb.masked_links.insert_one({
         "_id": hex_token,
         "user_id": message.from_user.id,
         "original_base64": file_token,
         "shortener_url": shortener_url,
-        "bot_link": bot_link,
         "access_token": access_token,
         "is_batch": is_batch,
         "restricted": restricted,
