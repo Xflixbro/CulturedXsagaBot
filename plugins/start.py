@@ -16,6 +16,7 @@ import random
 
 from plugins.others import home_buttons, home_buttons_admin
 from config import BYPASS_ATTEMPT_MEDIA
+from plugins.antibypass import verify_access, send_masked_link
 
 # ========== EMOJI EFFECTS CONSTANTS ==========
 STICKER_IDS = [
@@ -37,6 +38,7 @@ try:
 except:
     credit_config = {}
 
+
 async def send_bypass_message(client: Client, message: Message):
     """Send a rich bypass warning with media (video sent as animation/GIF)."""
     media_urls = BYPASS_ATTEMPT_MEDIA
@@ -44,7 +46,6 @@ async def send_bypass_message(client: Client, message: Message):
         media_urls = media_urls.split()
     media_urls = [u.strip() for u in media_urls if u.strip()]
 
-    # Everything in BOLD with 2-step spacing between sections
     caption = (
         "<blockquote><b>🚨 Bʏᴘᴀss Aᴛᴛᴇᴍᴘᴛ Dᴇᴛᴇᴄᴛᴇᴅ! 🚨</b></blockquote>\n\n"
         "<b>» ⚠️ ᴡᴀʀɴɪɴɢ...!!!ʏᴏᴜ ᴍᴜsᴛ ʀᴇsᴏʟᴠᴇ ᴛʜᴇ ʟɪɴᴋ ᴛᴏ ᴀᴄᴄᴇss ᴛʜᴇ ғɪʟᴇ. ɴᴏ sʜᴏʀᴛᴄᴜᴛs, ɴᴏ ᴛʀɪᴄᴋs! ᴀɴʏ ᴀᴛᴛᴇᴍᴘᴛ ᴛᴏ ʙʏᴘᴀss ᴛʜᴇ sʏsᴛᴇᴍ ᴡɪʟʟ ᴛʀɪɢɢᴇʀ ᴀɴ ɪɴsᴛᴀɴᴛ ʙᴀɴ! 🚫</b>\n\n"
@@ -54,31 +55,27 @@ async def send_bypass_message(client: Client, message: Message):
     if media_urls:
         media_url = random.choice(media_urls)
         ext = media_url.split('.')[-1].lower()
-        
+
         try:
             if ext in ('jpg', 'jpeg', 'png', 'webp'):
-                # Send as photo
                 await client.send_photo(
                     chat_id=message.chat.id,
                     photo=media_url,
                     caption=caption
                 )
             elif ext in ('mp4', 'gif', 'webm'):
-                # Send as animation (appears as GIF in Telegram)
                 await client.send_animation(
                     chat_id=message.chat.id,
                     animation=media_url,
                     caption=caption
                 )
             else:
-                # Unknown format - fallback to text
                 await message.reply(caption)
-        except Exception as e:
-            # Fallback to text-only if media fails
+        except Exception:
             await message.reply(caption)
     else:
-        # No media configured, send plain text
         await message.reply(caption)
+
 
 @Client.on_message(filters.command('start') & filters.private)
 @force_sub
@@ -94,18 +91,16 @@ async def start_command(client: Client, message: Message):
     is_banned = await client.mongodb.is_banned(user_id)
     if is_banned:
         return await message.reply(f"**{sc('You have been banned from using this bot!')}**")
-    
+
     is_premium_user = await client.mongodb.is_premium(user_id)
 
-    # ✅ EDIT 1: Save the real premium status (never changes during this request)
     actual_premium_user = is_premium_user
-    # ✅ EDIT 1: Flag - did the user just arrive via a verified shortener token?
     verified_via_token = False
 
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     credit_data = await enhanced_db.get_credits(user_id)
     user_credits = credit_data.get("balance", 0)
-    
+
     await enhanced_db.check_and_remove_expired(user_id)
 
     text = message.text
@@ -126,29 +121,86 @@ async def start_command(client: Client, message: Message):
                         f"{sc('When you access your first file, your referrer will earn credits!')}"
                     )
             return
-        
+
         if base64_string.startswith("rbatch_"):
             batch_id = base64_string.replace("rbatch_", "").strip()
             from plugins.batch_handler import process_batch
             await process_batch(client, message, batch_id)
             return
-            
+
         if base64_string.startswith("batch_"):
             batch_id = base64_string.replace("batch_", "").strip()
             from plugins.batch_handler import process_batch
             await process_batch(client, message, batch_id)
             return
-            
+
         access_token = None
         original_base64 = base64_string
         restricted = False
-        
+
         if "_" in base64_string:
             parts = base64_string.split("_", 1)
             if len(parts) == 2:
                 original_base64 = parts[0]
                 access_token = parts[1]
 
+            # ══════════════════════════════════════════════════════
+            #  NEW: Masked Gateway return path (16-char hex token)
+            #  Only triggers when masking is ON. Otherwise falls through.
+            # ══════════════════════════════════════════════════════
+            if access_token and len(original_base64) == 16 \
+                    and all(c in "0123456789abcdef" for c in original_base64):
+
+                result = await verify_access(client, user_id, original_base64, access_token)
+
+                if result["status"] == "OK":
+                    # Swap in the real base64 and let normal delivery proceed
+                    original_base64 = result["original_base64"]
+                    access_token = None
+
+                elif result["status"] == "BYPASS":
+                    # Reuse YOUR existing bypass UI + auto-ban + owner notify
+                    if user_id not in client.admins:
+                        was_banned = await client.mongodb.check_and_auto_ban(user_id, max_attempts=5)
+                        if was_banned:
+                            await message.reply(
+                                f"<blockquote>🚫 <b>{sc('you have been banned')}</b></blockquote>\n"
+                                f"<blockquote><b>{sc('reason: multiple bypass attempts detected')}</b></blockquote>\n"
+                                f"<blockquote><b>{sc('contact admin if you think this is a mistake')}</b></blockquote>"
+                            )
+                            return
+
+                    await send_bypass_message(client, message)
+
+                    try:
+                        bypass_count = await client.mongodb.get_bypass_count(user_id)
+                        await client.send_message(
+                            client.owner,
+                            f"🚨 <b>{sc('bypass detected')}</b>\n"
+                            f"{sc('user')}: <code>{user_id}</code>\n"
+                            f"{sc('reason')}: <b>{result['reason']}</b>\n"
+                            f"{sc('attempts in 24h')}: <b>{bypass_count}</b>"
+                        )
+                    except Exception:
+                        pass
+                    return
+
+                elif result["status"] in ("EXPIRED", "REUSED"):
+                    await message.reply(
+                        f"<blockquote>❌ <b>{sc(result['reason'].lower())}</b></blockquote>\n"
+                        f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
+                    )
+                    return
+
+                else:  # INVALID / DISABLED
+                    await message.reply(
+                        f"<blockquote>❌ <b>{sc('invalid or expired link')}</b></blockquote>"
+                    )
+                    return
+
+            # ══════════════════════════════════════════════════════
+            #  EXISTING: Your original token verification
+            # ══════════════════════════════════════════════════════
             if access_token:
                 token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
 
@@ -158,7 +210,7 @@ async def start_command(client: Client, message: Message):
                     verify_result = await client.mongodb.verify_access_token(
                         user_id, access_token, original_base64
                     )
-    
+
                     if verify_result == "BYPASS":
                         if user_id not in client.admins:
                             was_banned = await client.mongodb.check_and_auto_ban(user_id, max_attempts=5)
@@ -169,10 +221,9 @@ async def start_command(client: Client, message: Message):
                                     f"<blockquote><b>{sc('contact admin if you think this is a mistake')}</b></blockquote>"
                                 )
                                 return
-                        
-                        # Send the new bypass message with media
+
                         await send_bypass_message(client, message)
-                        
+
                         bypass_count = await client.mongodb.get_bypass_count(user_id)
                         await client.send_message(
                             client.owner,
@@ -181,7 +232,7 @@ async def start_command(client: Client, message: Message):
                             f"{sc('attempts in 24h')}: <b>{bypass_count}</b>"
                         )
                         return
-                    
+
                     if verify_result == "ALREADY_USED":
                         await message.reply(
                             f"<blockquote>❌ <b>{sc('token already used')}</b></blockquote>\n"
@@ -189,7 +240,7 @@ async def start_command(client: Client, message: Message):
                             f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                         )
                         return
-                    
+
                     if verify_result == "EXPIRED":
                         await message.reply(
                             f"<blockquote>⏰ <b>{sc('token expired')}</b></blockquote>\n"
@@ -197,16 +248,16 @@ async def start_command(client: Client, message: Message):
                             f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                         )
                         return
-    
+
                     if verify_result != "OK":
                         await message.reply(
                             f"<blockquote>❌ <b>{sc('invalid token')}</b></blockquote>\n"
                             f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                         )
                         return
-    
+
                     credit_system_enabled = await client.mongodb.is_credit_system_enabled()
-                    
+
                     if credit_system_enabled:
                         expiry_days = credit_config.get("expiry_days", 30)
                         verification_reward = await client.mongodb.get_bot_config('verification_reward', 3)
@@ -224,49 +275,48 @@ async def start_command(client: Client, message: Message):
                             f"📂 <b>{sc('sending your file now...')}</b>"
                         )
 
-                    # ✅ EDIT 2: Mark this request as shortener-verified (DO NOT set is_premium_user = True)
                     verified_via_token = True
 
         from helper.helper_func import is_token_format
-        
+
         ids = []
         custom_chat_id = None
-        
+
         if is_token_format(original_base64):
             if await client.mongodb.is_token_rate_limited(user_id):
                 return await message.reply(
                     f"<blockquote>⏳ <b>{sc('too many invalid attempts')}</b></blockquote>\n"
                     f"<blockquote><b>{sc('please wait a minute and try again')}</b></blockquote>"
                 )
-            
+
             token_doc = await client.mongodb.resolve_file_token(original_base64)
-            
+
             if not token_doc:
                 await client.mongodb.record_invalid_token_attempt(user_id)
                 return await message.reply(
                     f"<blockquote>❌ <b>{sc('invalid or expired link')}</b></blockquote>\n"
                     f"<blockquote><b>{sc('please get a new link')}</b></blockquote>"
                 )
-            
+
             restricted = token_doc.get('restricted', False)
             channel_id = token_doc["channel_id"]
             start_msg_id = token_doc["msg_id"]
             end_msg_id = token_doc.get("end_msg_id")
-            
+
             if end_msg_id:
                 ids = list(range(start_msg_id, end_msg_id + 1))
             else:
                 ids = [start_msg_id]
-                
+
             custom_chat_id = channel_id
-            
+
         else:
             try:
                 string = await decode(original_base64)
                 argument = string.split("-")
             except Exception:
                 return
-        
+
             if len(argument) == 3 and argument[0] in ("get", "rget"):
                 restricted = (argument[0] == "rget")
                 try:
@@ -295,7 +345,7 @@ async def start_command(client: Client, message: Message):
 
         credit_system_enabled = await client.mongodb.is_credit_system_enabled()
         token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
-        
+
         is_first_file = credit_data.get("total_spent", 0) == 0 and not is_premium_user
 
         if credit_system_enabled and user_credits > 0 and not is_premium_user:
@@ -308,10 +358,9 @@ async def start_command(client: Client, message: Message):
                 f"{sc('remaining credits')}: {user_credits}"
             )
 
-        # ✅ EDIT 3: Shortener now works for restricted links too (only skip if already verified)
         if not is_premium_user and token_verification_enabled and not verified_via_token:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
-            
+
             content_name = ""
             try:
                 if ids:
@@ -320,7 +369,7 @@ async def start_command(client: Client, message: Message):
                         main_db = getattr(client, 'db_channel_id', client.db)
                         extra_dbs = await client.mongodb.get_db_channels()
                         caption_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
-                        
+
                         for chan in caption_channels:
                             try:
                                 if not chan: continue
@@ -333,30 +382,35 @@ async def start_command(client: Client, message: Message):
                     except: pass
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Error fetching content name: {e}")
-            
-            access_token = secrets.token_hex(16)
-            await client.mongodb.create_access_token(user_id, original_base64, access_token)
-            
-            file_link = f"https://t.me/{client.username}?start={original_base64}_{access_token}"
-            shortened_url = await shorten_url(file_link)
-            
+
+            # ══════════════════════════════════════════════════════
+            #  MASKED LINK (falls back to raw shortener if GATEWAY_BASE_URL is empty)
+            # ══════════════════════════════════════════════════════
+            masked = await send_masked_link(
+                client=client,
+                message=message,
+                file_token=original_base64,
+                is_batch=bool(ids and len(ids) > 1),
+                restricted=restricted,
+            )
+
             await temp_msg.delete()
-            
+
             premium_text = (
                 f"{content_name}"
                 f"<b>🔗 {sc('your file link')}:</b>\n\n"
                 f"<blockquote>👉 {sc('solve the shortener to unlock your file')}</blockquote>\n\n"
                 f"<b>💎 {sc('want direct access')}?</b> {sc('buy premium')}!"
             )
-            
+
             buttons = InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"⌜{sc('ᴏᴘᴇɴ ʟɪɴᴋ')}⌟", url=shortened_url)],
+                [InlineKeyboardButton(f"⌜{sc('ᴏᴘᴇɴ ʟɪɴᴋ')}⌟", url=masked["masked_url"])],
                 [
                     InlineKeyboardButton(f"「{sc('ᴛᴜᴛᴏʀɪᴀʟ')}」", url="https://t.me/CulturedxSaga/109"),
                     InlineKeyboardButton(f"「{sc('ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ')}」", url="https://t.me/Culturedxsga/100")
                 ]
             ])
-            
+
             await client.send_photo(
                 chat_id=message.chat.id,
                 photo="https://files.catbox.moe/bktufd.jpg",
@@ -367,14 +421,14 @@ async def start_command(client: Client, message: Message):
             return
 
         temp_msg = await message.reply(f"{sc('wait a sec')}..")
-        
+
         main_db = getattr(client, 'db_channel_id', client.db)
         extra_dbs = await client.mongodb.get_db_channels()
-        
+
         search_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
-        
+
         valid_messages = []
-        
+
         for channel in search_channels:
             if not channel: continue
             try:
@@ -388,13 +442,11 @@ async def start_command(client: Client, message: Message):
         if not valid_messages:
             await temp_msg.edit_text(f"{sc('couldnt find the files in database')}.")
             return
-            
+
         await temp_msg.delete()
 
-        # ✅ EDIT 4: Use actual_premium_user (not is_premium_user) so a shortener solve or credit-spend
-        # does NOT grant forward/save rights on restricted files.
         use_protect = restricted and not actual_premium_user
-        
+
         yugen_msgs = []
         for msg in valid_messages:
             caption = (
@@ -477,7 +529,7 @@ async def start_command(client: Client, message: Message):
         markup = home_buttons_admin()
     else:
         markup = home_buttons()
-    
+
     photo = client.messages.get("START_PHOTO", "")
     effect_id = random.choice(MESSAGE_EFFECT_IDS) if MESSAGE_EFFECT_IDS else None
 
