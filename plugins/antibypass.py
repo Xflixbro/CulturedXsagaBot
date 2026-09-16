@@ -11,7 +11,7 @@ from pyrogram import Client
 # =====================================================
 GATEWAY_BASE_URL = "https://oggyflix2.vercel.app"
 
-MIN_SOLVE_TIME = 25
+MIN_SOLVE_TIME = 2
 ACCESS_TOKEN_EXPIRY_MINUTES = 10
 
 
