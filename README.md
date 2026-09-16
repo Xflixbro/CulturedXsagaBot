@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://i.ibb.co/gbVyYG8z/photo-2026-02-17-18-28-50-7607902977038221336.jpg" alt="Advanced File Store Bot Banner" width="100%">
+  <img src="https://i.ibb.co/gbVyYG8z/photo-2026-02-17-18-28-50-7607902977038221336.jpg" alt="Advanced File Store Bot v2 Banner" width="100%">
 </p>
 
 <p align="center">
