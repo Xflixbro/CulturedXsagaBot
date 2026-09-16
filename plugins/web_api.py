@@ -46,20 +46,18 @@ async def verify_token(request):
         })
 
     # ══════════════════════════════════════════════════════
-    #  Global Verification check.
-    #  - ENABLED  → status OK  → frontend runs verify + shortener
-    #  - DISABLED → status DISABLED + bot_username + file_token
-    #               → frontend runs verify, then sends to bot
+    #  Check Global Verification System flag
     # ══════════════════════════════════════════════════════
     verification_enabled = await _bot_client.mongodb.get_bot_config(
         'token_verification_enabled', True
     )
 
     if not verification_enabled:
+        bot_username = getattr(_bot_client, "username", None) or "eonxstBot"
         return web.json_response({
             "status": "DISABLED",
             "reason": "Verification disabled",
-            "bot_username": _bot_client.username,
+            "bot_username": bot_username,
             "file_token": link_data.get("original_base64") or "",
         })
 
