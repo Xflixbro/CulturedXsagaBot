@@ -140,11 +140,12 @@ async def start_command(client: Client, message: Message):
         restricted = False
 
         # ══════════════════════════════════════════════════════
-        #  Parse start payload: FILE_HEX_ACCESS (3 parts)
-        #  or FILE_ACCESS (2 parts - legacy)
+        #  Parse start payload: FILE_HEX_ACCESS
+        #  Use split("_", 2) so extra underscores in access_token
+        #  do not break parsing.
         # ══════════════════════════════════════════════════════
         if "_" in base64_string:
-            parts = base64_string.split("_")
+            parts = base64_string.split("_", 2)
             if len(parts) == 3:
                 original_base64 = parts[0]
                 hex_token = parts[1]
