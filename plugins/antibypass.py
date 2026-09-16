@@ -25,7 +25,8 @@ def generate_hex_token() -> str:
 
 
 def generate_access_token() -> str:
-    return secrets.token_urlsafe(32)
+    # hex only → never contains underscores
+    return secrets.token_hex(16)
 
 
 async def create_masked_link(
