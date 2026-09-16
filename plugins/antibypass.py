@@ -9,8 +9,6 @@ from pyrogram import Client
 # =====================================================
 #  CONFIG
 # =====================================================
-# Leave EMPTY ("") to disable masking → bot sends raw shortener link
-# Set to your Vercel URL to enable masking
 GATEWAY_BASE_URL = "https://oggyflix2.vercel.app"
 
 MIN_SOLVE_TIME = 25
@@ -91,35 +89,62 @@ async def send_masked_link(
 ) -> dict:
     from helper.helper_func import shorten_url
 
-    masked = await create_masked_link(
-        client=client,
-        user_id=message.from_user.id,
-        original_base64=file_token,
-        shortener_url="",   # will be set after shortening
-        is_batch=is_batch,
-        restricted=restricted,
-    )
+    # ── Masking disabled → send plain shortener link ──
+    if not is_masking_enabled():
+        bot_link = f"https://t.me/{client.username}?start={file_token}"
+        shortener_url = await shorten_url(bot_link)
+        return {
+            "masked_url": shortener_url,
+            "shortener_url": shortener_url,
+            "bot_link": bot_link,
+            "hex_token": None,
+            "masked": False,
+        }
 
-    # Build deep link with file_token + hex_token + access_token
+    # 1. generate tokens
+    hex_token = generate_hex_token()
+    access_token = generate_access_token()
+    now = datetime.now()
+    expires_at = now + timedelta(minutes=ACCESS_TOKEN_EXPIRY_MINUTES)
+
+    # 2. build deep link with 3 parts: FILE_HEX_ACCESS
     bot_link = (
         f"https://t.me/{client.username}"
-        f"?start={file_token}_{masked['hex_token']}_{masked['access_token']}"
+        f"?start={file_token}_{hex_token}_{access_token}"
     )
 
+    # 3. shorten it
     shortener_url = await shorten_url(bot_link)
 
-    # Store the real shortener URL back into the record
-    await client.mongodb.masked_links.update_one(
-        {"_id": masked["hex_token"]},
-        {"$set": {"shortener_url": shortener_url}},
-    )
+    # 4. store record with real shortener URL
+    await client.mongodb.masked_links.insert_one({
+        "_id": hex_token,
+        "user_id": message.from_user.id,
+        "original_base64": file_token,
+        "shortener_url": shortener_url,
+        "access_token": access_token,
+        "is_batch": is_batch,
+        "restricted": restricted,
+        "created_at": now,
+        "expires_at": expires_at,
+        "used": False,
+        "gateway_opened_at": None,
+        "shortener_redirected_at": None,
+        "access_granted_at": None,
+        "bypass_attempted": False,
+        "bypass_reason": None,
+    })
+
+    # 5. build gateway URL with the real shortener URL
+    url_b64 = base64.urlsafe_b64encode(shortener_url.encode()).decode().rstrip("=")
+    masked_url = f"{GATEWAY_BASE_URL.rstrip('/')}/access/{hex_token}?url={url_b64}"
 
     return {
-        "masked_url": masked["masked_url"],
+        "masked_url": masked_url,
         "shortener_url": shortener_url,
         "bot_link": bot_link,
-        "hex_token": masked.get("hex_token"),
-        "masked": masked.get("masked", False),
+        "hex_token": hex_token,
+        "masked": True,
     }
 
 
