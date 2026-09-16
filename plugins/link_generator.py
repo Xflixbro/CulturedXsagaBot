@@ -14,25 +14,29 @@ def _cancel_btn():
     ]])
 
 
+def _build_bot_link(client: Client, file_token: str) -> str:
+    """Return a PERMANENT plain Telegram bot link (no gateway, no expiry)."""
+    return f"https://t.me/{client.username}?start={file_token}"
+
+
 async def _build_and_reply(client, source_message, file_token, file_name,
                            is_batch=False, restricted=False, prefix=""):
-    masked = await send_masked_link(
-        client=client, message=source_message, file_token=file_token,
-        is_batch=is_batch, restricted=restricted,
-    )
+    # Plain permanent bot link — no gateway, no expiry
+    bot_link = _build_bot_link(client, file_token)
+
     head = f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n" if file_name else ""
     body = (
         f"{prefix}{head}"
         f"<b>{sc('here is your link')}</b>\n\n"
-        f'<a href="{masked["masked_url"]}">🔗 {sc("Open Link")}</a>\n\n'
-        f"<code>{masked['masked_url']}</code>"
+        f'<a href="{bot_link}">🔗 {sc("Open Link")}</a>\n\n'
+        f"<code>{bot_link}</code>"
     )
     if restricted:
         body += f"\n\n<i>{sc('non-premium users cannot forward or save')}</i>"
 
     buttons = [[InlineKeyboardButton(
         f"🔁 {sc('share url')}",
-        url=f"https://telegram.me/share/url?url={masked['masked_url']}",
+        url=f"https://telegram.me/share/url?url={bot_link}",
     )]]
     await source_message.reply_text(
         body, quote=True,
@@ -41,6 +45,9 @@ async def _build_and_reply(client, source_message, file_token, file_name,
     )
 
 
+# ══════════════════════════════════════════════════════════
+#  /batch  →  multi-file batch, permanent link
+# ══════════════════════════════════════════════════════════
 @Client.on_message(filters.private & filters.command("batch"))
 async def batch(client: Client, message: Message):
     if message.from_user.id not in client.admins:
@@ -98,6 +105,9 @@ async def batch(client: Client, message: Message):
     await _build_and_reply(client, r, token, batch_name, is_batch=True, prefix=info)
 
 
+# ══════════════════════════════════════════════════════════
+#  /rbatch  →  restricted batch, permanent link
+# ══════════════════════════════════════════════════════════
 @Client.on_message(filters.private & filters.command("rbatch"))
 async def rbatch(client: Client, message: Message):
     if message.from_user.id not in client.admins:
@@ -155,6 +165,9 @@ async def rbatch(client: Client, message: Message):
     await _build_and_reply(client, r, token, batch_name, is_batch=True, restricted=True, prefix=info)
 
 
+# ══════════════════════════════════════════════════════════
+#  /genlink  →  single file, permanent link
+# ══════════════════════════════════════════════════════════
 @Client.on_message(filters.private & filters.command("genlink"))
 async def genlink(client: Client, message: Message):
     if message.from_user.id not in client.admins:
@@ -193,6 +206,9 @@ async def genlink(client: Client, message: Message):
     await _build_and_reply(client, r, token, file_name)
 
 
+# ══════════════════════════════════════════════════════════
+#  /rgenlink  →  restricted single file, permanent link
+# ══════════════════════════════════════════════════════════
 @Client.on_message(filters.private & filters.command("rgenlink"))
 async def rgenlink(client: Client, message: Message):
     if message.from_user.id not in client.admins:
@@ -231,6 +247,9 @@ async def rgenlink(client: Client, message: Message):
     await _build_and_reply(client, r, token, file_name, restricted=True)
 
 
+# ══════════════════════════════════════════════════════════
+#  Auto handler → admin forwards a file, bot replies with link
+# ══════════════════════════════════════════════════════════
 @Client.on_message(
     filters.private
     & (filters.document | filters.video | filters.audio)
@@ -276,22 +295,22 @@ async def single_file_gen_handler(client: Client, message: Message):
         except Exception:
             token = await encode(f"get-{msg_id * abs(ch_id)}")
 
-        masked = await send_masked_link(client, message, token)
+        bot_link = _build_bot_link(client, token)
 
         body = ""
         if file_name:
             body += f"<blockquote><b>📂 {file_name}</b></blockquote>\n\n"
         body += (
             f"<b>{sc('here is your link')}</b>\n\n"
-            f'<a href="{masked["masked_url"]}">🔗 {sc("Open Link")}</a>\n\n'
-            f"<code>{masked['masked_url']}</code>"
+            f'<a href="{bot_link}">🔗 {sc("Open Link")}</a>\n\n'
+            f"<code>{bot_link}</code>"
         )
 
         await msg.edit_text(
             body,
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton(f"🔁 {sc('share url')}",
-                                     url=f"https://telegram.me/share/url?url={masked['masked_url']}")
+                                     url=f"https://telegram.me/share/url?url={bot_link}")
             ]]),
             disable_web_page_preview=False,
         )
