@@ -140,7 +140,7 @@ async def start_command(client: Client, message: Message):
         restricted = False
 
         # ══════════════════════════════════════════════════════
-        #  Parse the start payload: FILE_HEX_ACCESS (3 parts)
+        #  Parse start payload: FILE_HEX_ACCESS (3 parts)
         #  or FILE_ACCESS (2 parts - legacy)
         # ══════════════════════════════════════════════════════
         if "_" in base64_string:
@@ -156,14 +156,11 @@ async def start_command(client: Client, message: Message):
             else:
                 original_base64 = base64_string
 
-            # ══════════════════════════════════════════════════════
-            #  NEW: Masked Gateway return path (hex + access present)
-            # ══════════════════════════════════════════════════════
+            # ── Masked Gateway return path ──
             if hex_token and access_token:
                 result = await verify_access(client, user_id, hex_token, access_token)
 
                 if result["status"] == "OK":
-                    # Swap in the real file token and mark verified
                     original_base64 = result["original_base64"]
                     access_token = None
                     hex_token = None
@@ -202,15 +199,13 @@ async def start_command(client: Client, message: Message):
                     )
                     return
 
-                else:  # INVALID / DISABLED
+                else:
                     await message.reply(
                         f"<blockquote>❌ <b>{sc('invalid or expired link')}</b></blockquote>"
                     )
                     return
 
-            # ══════════════════════════════════════════════════════
-            #  EXISTING: legacy token verification path
-            # ══════════════════════════════════════════════════════
+            # ── Legacy token verification path ──
             if access_token and not hex_token:
                 token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
 
@@ -393,9 +388,6 @@ async def start_command(client: Client, message: Message):
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Error fetching content name: {e}")
 
-            # ══════════════════════════════════════════════════════
-            #  MASKED LINK
-            # ══════════════════════════════════════════════════════
             masked = await send_masked_link(
                 client=client,
                 message=message,
