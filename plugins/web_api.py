@@ -31,7 +31,6 @@ async def verify_token(request):
     token = request.query.get("token")
     if not token or _bot_client is None:
         return web.json_response({"error": "bad request"}, status=400)
-
     link_data = await _bot_client.mongodb.masked_links.find_one({"_id": token})
     if not link_data:
         return web.json_response({"status": "INVALID", "reason": "Token not found"})
@@ -44,23 +43,6 @@ async def verify_token(request):
             "status": "BYPASS",
             "reason": link_data.get("bypass_reason", "Bypass detected"),
         })
-
-    # ══════════════════════════════════════════════════════
-    #  Check Global Verification System flag
-    # ══════════════════════════════════════════════════════
-    verification_enabled = await _bot_client.mongodb.get_bot_config(
-        'token_verification_enabled', True
-    )
-
-    if not verification_enabled:
-        bot_username = getattr(_bot_client, "username", None) or "eonxstBot"
-        return web.json_response({
-            "status": "DISABLED",
-            "reason": "Verification disabled",
-            "bot_username": bot_username,
-            "file_token": link_data.get("original_base64") or "",
-        })
-
     return web.json_response({"status": "OK"})
 
 
