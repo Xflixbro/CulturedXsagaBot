@@ -135,31 +135,41 @@ async def start_command(client: Client, message: Message):
             return
 
         access_token = None
+        hex_token = None
         original_base64 = base64_string
         restricted = False
 
+        # ══════════════════════════════════════════════════════
+        #  Parse the start payload: FILE_HEX_ACCESS (3 parts)
+        #  or FILE_ACCESS (2 parts - legacy)
+        # ══════════════════════════════════════════════════════
         if "_" in base64_string:
-            parts = base64_string.split("_", 1)
-            if len(parts) == 2:
+            parts = base64_string.split("_")
+            if len(parts) == 3:
+                original_base64 = parts[0]
+                hex_token = parts[1]
+                access_token = parts[2]
+            elif len(parts) == 2:
                 original_base64 = parts[0]
                 access_token = parts[1]
+                hex_token = None
+            else:
+                original_base64 = base64_string
 
             # ══════════════════════════════════════════════════════
-            #  NEW: Masked Gateway return path (16-char hex token)
-            #  Only triggers when masking is ON. Otherwise falls through.
+            #  NEW: Masked Gateway return path (hex + access present)
             # ══════════════════════════════════════════════════════
-            if access_token and len(original_base64) == 16 \
-                    and all(c in "0123456789abcdef" for c in original_base64):
-
-                result = await verify_access(client, user_id, original_base64, access_token)
+            if hex_token and access_token:
+                result = await verify_access(client, user_id, hex_token, access_token)
 
                 if result["status"] == "OK":
-                    # Swap in the real base64 and let normal delivery proceed
+                    # Swap in the real file token and mark verified
                     original_base64 = result["original_base64"]
                     access_token = None
+                    hex_token = None
+                    verified_via_token = True
 
                 elif result["status"] == "BYPASS":
-                    # Reuse YOUR existing bypass UI + auto-ban + owner notify
                     if user_id not in client.admins:
                         was_banned = await client.mongodb.check_and_auto_ban(user_id, max_attempts=5)
                         if was_banned:
@@ -199,9 +209,9 @@ async def start_command(client: Client, message: Message):
                     return
 
             # ══════════════════════════════════════════════════════
-            #  EXISTING: Your original token verification
+            #  EXISTING: legacy token verification path
             # ══════════════════════════════════════════════════════
-            if access_token:
+            if access_token and not hex_token:
                 token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
 
                 if token_verification_enabled:
@@ -384,7 +394,7 @@ async def start_command(client: Client, message: Message):
                 client.LOGGER(__name__, client.name).warning(f"Error fetching content name: {e}")
 
             # ══════════════════════════════════════════════════════
-            #  MASKED LINK (falls back to raw shortener if GATEWAY_BASE_URL is empty)
+            #  MASKED LINK
             # ══════════════════════════════════════════════════════
             masked = await send_masked_link(
                 client=client,
