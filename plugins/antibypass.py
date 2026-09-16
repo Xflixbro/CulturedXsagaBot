@@ -11,7 +11,7 @@ from pyrogram import Client
 # =====================================================
 # Leave EMPTY ("") to disable masking → bot sends raw shortener link
 # Set to your Vercel URL to enable masking
-GATEWAY_BASE_URL = ""
+GATEWAY_BASE_URL = "https://oggyflix2.vercel.app"
 
 MIN_SOLVE_TIME = 25
 ACCESS_TOKEN_EXPIRY_MINUTES = 10
