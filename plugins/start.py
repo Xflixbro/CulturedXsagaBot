@@ -1,5 +1,5 @@
 # Made by @Awakeners_Bots
-# GitHub: https://github.com/Awakener_Bots
+# start.py — START command handler (backward compatible)
 
 from helper.helper_func import *
 from helper.credit_db import credit_db
@@ -16,7 +16,12 @@ import random
 
 from plugins.others import home_buttons, home_buttons_admin
 from config import BYPASS_ATTEMPT_MEDIA
-from plugins.antibypass import verify_access, send_masked_link
+from plugins.antibypass import (
+    verify_access,
+    send_masked_link,
+    is_global_verification_enabled,
+    is_masking_enabled,
+)
 
 # ========== EMOJI EFFECTS CONSTANTS ==========
 STICKER_IDS = [
@@ -40,7 +45,7 @@ except:
 
 
 async def send_bypass_message(client: Client, message: Message):
-    """Send a rich bypass warning with media (video sent as animation/GIF)."""
+    """Send a rich bypass warning with media."""
     media_urls = BYPASS_ATTEMPT_MEDIA
     if isinstance(media_urls, str):
         media_urls = media_urls.split()
@@ -55,20 +60,11 @@ async def send_bypass_message(client: Client, message: Message):
     if media_urls:
         media_url = random.choice(media_urls)
         ext = media_url.split('.')[-1].lower()
-
         try:
             if ext in ('jpg', 'jpeg', 'png', 'webp'):
-                await client.send_photo(
-                    chat_id=message.chat.id,
-                    photo=media_url,
-                    caption=caption
-                )
+                await client.send_photo(chat_id=message.chat.id, photo=media_url, caption=caption)
             elif ext in ('mp4', 'gif', 'webm'):
-                await client.send_animation(
-                    chat_id=message.chat.id,
-                    animation=media_url,
-                    caption=caption
-                )
+                await client.send_animation(chat_id=message.chat.id, animation=media_url, caption=caption)
             else:
                 await message.reply(caption)
         except Exception:
@@ -93,14 +89,12 @@ async def start_command(client: Client, message: Message):
         return await message.reply(f"**{sc('You have been banned from using this bot!')}**")
 
     is_premium_user = await client.mongodb.is_premium(user_id)
-
     actual_premium_user = is_premium_user
     verified_via_token = False
 
     enhanced_db = EnhancedCreditDB(client.db_uri, client.db_name)
     credit_data = await enhanced_db.get_credits(user_id)
     user_credits = credit_data.get("balance", 0)
-
     await enhanced_db.check_and_remove_expired(user_id)
 
     text = message.text
@@ -141,8 +135,6 @@ async def start_command(client: Client, message: Message):
 
         # ══════════════════════════════════════════════════════
         #  Parse start payload: FILE_HEX_ACCESS
-        #  Use split("_", 2) so extra underscores in access_token
-        #  do not break parsing.
         # ══════════════════════════════════════════════════════
         if "_" in base64_string:
             parts = base64_string.split("_", 2)
@@ -177,9 +169,7 @@ async def start_command(client: Client, message: Message):
                                 f"<blockquote><b>{sc('contact admin if you think this is a mistake')}</b></blockquote>"
                             )
                             return
-
                     await send_bypass_message(client, message)
-
                     try:
                         bypass_count = await client.mongodb.get_bypass_count(user_id)
                         await client.send_message(
@@ -206,13 +196,12 @@ async def start_command(client: Client, message: Message):
                     )
                     return
 
-            # ── Legacy token verification path ──
+            # ── Legacy token verification path (2-part payloads) ──
             if access_token and not hex_token:
                 token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
 
                 if token_verification_enabled:
                     await client.mongodb.increment_token_clicks(user_id, access_token)
-
                     verify_result = await client.mongodb.verify_access_token(
                         user_id, access_token, original_base64
                     )
@@ -227,9 +216,7 @@ async def start_command(client: Client, message: Message):
                                     f"<blockquote><b>{sc('contact admin if you think this is a mistake')}</b></blockquote>"
                                 )
                                 return
-
                         await send_bypass_message(client, message)
-
                         bypass_count = await client.mongodb.get_bypass_count(user_id)
                         await client.send_message(
                             client.owner,
@@ -263,7 +250,6 @@ async def start_command(client: Client, message: Message):
                         return
 
                     credit_system_enabled = await client.mongodb.is_credit_system_enabled()
-
                     if credit_system_enabled:
                         expiry_days = credit_config.get("expiry_days", 30)
                         verification_reward = await client.mongodb.get_bot_config('verification_reward', 3)
@@ -280,9 +266,11 @@ async def start_command(client: Client, message: Message):
                             f"<b>🎉 {sc('verification successful!')}</b>\n"
                             f"📂 <b>{sc('sending your file now...')}</b>"
                         )
-
                     verified_via_token = True
 
+        # ══════════════════════════════════════════════════════
+        #  RESOLVE FILE TOKEN (new + legacy formats)
+        # ══════════════════════════════════════════════════════
         from helper.helper_func import is_token_format
 
         ids = []
@@ -296,7 +284,6 @@ async def start_command(client: Client, message: Message):
                 )
 
             token_doc = await client.mongodb.resolve_file_token(original_base64)
-
             if not token_doc:
                 await client.mongodb.record_invalid_token_attempt(user_id)
                 return await message.reply(
@@ -308,12 +295,10 @@ async def start_command(client: Client, message: Message):
             channel_id = token_doc["channel_id"]
             start_msg_id = token_doc["msg_id"]
             end_msg_id = token_doc.get("end_msg_id")
-
             if end_msg_id:
                 ids = list(range(start_msg_id, end_msg_id + 1))
             else:
                 ids = [start_msg_id]
-
             custom_chat_id = channel_id
 
         else:
@@ -349,21 +334,25 @@ async def start_command(client: Client, message: Message):
             else:
                 return
 
+        # ══════════════════════════════════════════════════════
+        #  CREDIT SYSTEM
+        # ══════════════════════════════════════════════════════
         credit_system_enabled = await client.mongodb.is_credit_system_enabled()
         token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
-
         is_first_file = credit_data.get("total_spent", 0) == 0 and not is_premium_user
 
         if credit_system_enabled and user_credits > 0 and not is_premium_user:
             await enhanced_db.use_credit(user_id)
             user_credits -= 1
             is_premium_user = True
-
             await message.reply(
                 f"⚡ {sc('1 credit used')}!\n"
                 f"{sc('remaining credits')}: {user_credits}"
             )
 
+        # ══════════════════════════════════════════════════════
+        #  GLOBAL VERIFICATION ENABLED → send masked link
+        # ══════════════════════════════════════════════════════
         if not is_premium_user and token_verification_enabled and not verified_via_token:
             temp_msg = await message.reply(f"🔄 **{sc('generating your link')}...**")
 
@@ -378,14 +367,17 @@ async def start_command(client: Client, message: Message):
 
                         for chan in caption_channels:
                             try:
-                                if not chan: continue
+                                if not chan:
+                                    continue
                                 f_msg = await client.get_messages(chan, t_msg_id)
                                 if f_msg and not f_msg.empty:
                                     if f_msg.document:
                                         content_name = f"🎬 <b>{f_msg.document.file_name}</b>\n\n"
                                     break
-                            except: continue
-                    except: pass
+                            except:
+                                continue
+                    except:
+                        pass
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Error fetching content name: {e}")
 
@@ -423,17 +415,19 @@ async def start_command(client: Client, message: Message):
             )
             return
 
+        # ══════════════════════════════════════════════════════
+        #  GLOBAL VERIFICATION DISABLED → direct send
+        # ══════════════════════════════════════════════════════
         temp_msg = await message.reply(f"{sc('wait a sec')}..")
 
         main_db = getattr(client, 'db_channel_id', client.db)
         extra_dbs = await client.mongodb.get_db_channels()
-
         search_channels = [custom_chat_id] if custom_chat_id else [main_db] + extra_dbs
 
         valid_messages = []
-
         for channel in search_channels:
-            if not channel: continue
+            if not channel:
+                continue
             try:
                 messages = await get_messages(client, ids, channel)
                 valid_messages = [msg for msg in messages if msg and not getattr(msg, 'empty', True)]
@@ -447,7 +441,6 @@ async def start_command(client: Client, message: Message):
             return
 
         await temp_msg.delete()
-
         use_protect = restricted and not actual_premium_user
 
         yugen_msgs = []
@@ -459,13 +452,8 @@ async def start_command(client: Client, message: Message):
                 if client.messages.get('CAPTION', '') and msg.document
                 else (msg.caption.html if msg.caption else "")
             )
-
             try:
-                copied_msg = await msg.copy(
-                    chat_id=user_id,
-                    caption=caption,
-                    protect_content=use_protect
-                )
+                copied_msg = await msg.copy(chat_id=user_id, caption=caption, protect_content=use_protect)
                 yugen_msgs.append(copied_msg)
             except Exception as e:
                 client.LOGGER(__name__, client.name).warning(f"Failed to copy message {msg.id}: {e}")
@@ -493,6 +481,9 @@ async def start_command(client: Client, message: Message):
             )
         return
 
+    # ══════════════════════════════════════════════════════════
+    #  PLAIN /start (no payload)
+    # ══════════════════════════════════════════════════════════
     try:
         await message.delete()
     except:
@@ -509,7 +500,6 @@ async def start_command(client: Client, message: Message):
         await asyncio.sleep(0.8)
         m = await message.reply_text("✨ ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ᴍᴀɢɪᴄ...")
         await asyncio.sleep(0.4)
-
         await client.send_chat_action(message.chat.id, ChatAction.TYPING)
         await m.edit_text("⚡ ᴘᴏᴡᴇʀɪɴɢ ᴜᴘ ʏᴏᴜʀ ᴇxᴘᴇʀɪᴇɴᴄᴇ...")
         await asyncio.sleep(0.4)
