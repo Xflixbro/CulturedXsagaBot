@@ -705,8 +705,11 @@ Active Providers: <code>{len([k for k, v in URL_SHORTENERS.items() if v.get('act
 
 """
     token_verification_enabled = await client.mongodb.get_bot_config('token_verification_enabled', True)
+    bypass_check_enabled = await client.mongodb.get_bot_config('bypass_check_enabled', True)
     system_status = "✅ Enabled" if token_verification_enabled else "❌ Disabled"
-    msg += f"Global Verification System: {system_status}\n\n"
+    bypass_status = "✅ Enabled" if bypass_check_enabled else "❌ Disabled"
+    msg += f"Global Verification System: {system_status}\n"
+    msg += f"Anti-Bypass Timer Check: {bypass_status}\n\n"
 
     for key, provider in URL_SHORTENERS.items():
         status = "✅ Active" if provider.get('active', False) else "❌ Inactive"
