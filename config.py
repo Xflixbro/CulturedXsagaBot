@@ -14,15 +14,15 @@ MSG_EFFECT = 5046500389126442
 # Telegram API Credentials (Get from https://my.telegram.org)
 API_ID = 39185942
 API_HASH = "36bb0447e7986c4a81e17b7281980b44"
-BOT_TOKEN = "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg"
+BOT_TOKEN = ""
 
 # ===========================
 # DATABASE
 # ===========================
 
 # MongoDB Connection String
-DATABASE_URI = "mongodb+srv://eonxstBotv2:eonxstBotv2@cluster0.tqjuuyt.mongodb.net/?appName=Cluster0"
-DATABASE_NAME = "CORNXVILLA"
+DATABASE_URI = ""
+DATABASE_NAME = "OFLIX"
 
 # ===========================
 # CHANNELS
@@ -61,27 +61,19 @@ PROTECT_CONTENT = False
 DISABLE_BUTTON = False
 
 # AroLinks URL Shortener Configuration
-AROLINKS_API_TOKEN = "21ec65db4a55fdb5051aa3156cc012a9359587f9"
-AROLINKS_API_URL = "https://arolinks.com"
+AROLINKS_API_TOKEN = "d5911095597018fad72bf9ad1df544163b1520db"
+AROLINKS_API_URL = "https://shortxlinks.com"
 
 # URL Shortener Providers Configuration
 URL_SHORTENERS = {
     'arolinks': {
-        'name': 'AroLinks',
-        'api_url': 'https://arolinks.com/api',
+        'name': 'Shortxlinks',
+        'api_url': 'https://shortxlinks.com/api',
         'api_token': AROLINKS_API_TOKEN,
         'format': 'text',
         'active': True
     }
 }
-
-# ===========================
-# PERMANENT LINK SYSTEM
-# ===========================
-
-PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
-WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://oggyflix.vercel.app/")
-WEBSITE_PARAM = os.environ.get("WEBSITE_PARAM", "Neostart")
 
 # BYPASS ATTEMPT MEDIA
 # ===========================
