@@ -1,12 +1,12 @@
  [
     {
         "session": "ses1",
-        "token": "8919663861:AAE6doj5mSDlO2G5XY5CVs_aN7kgS3HRJKg",
+        "token": "8922298986:AAGg8Tm0R6oblAruykW74Q1oQsPG_FZB00Y",
         "api_id": "39185942",
         "api_hash": "36bb0447e7986c4a81e17b7281980b44",
         "workers": 8,
-        "db_uri": "mongodb+srv://eonxstBotv2:eonxstBotv2@cluster0.tqjuuyt.mongodb.net/?appName=Cluster0",
-        "db_name": "CORNXVILLA",
+        "db_uri": "mongodb+srv://EonOFX1Robotv1:EonOFX1Robotv1@cluster0.wkm4vnu.mongodb.net/?appName=Cluster0",
+        "db_name": "OFLIX",
         "fsubs": [],
         "db": -1002162795137,
         "auto_del": 300,
