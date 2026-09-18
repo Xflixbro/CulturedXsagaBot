@@ -12,7 +12,7 @@ from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import UserNotParticipant, Forbidden, PeerIdInvalid, ChatAdminRequired, FloodWait
 from datetime import datetime, timedelta
 from pyrogram import errors
-from config import URL_SHORTENERS, PERMANENT_LINKS, WEBSITE_URL, WEBSITE_PARAM
+from config import URL_SHORTENERS
 from helper.font_converter import to_small_caps as sc
 
 
