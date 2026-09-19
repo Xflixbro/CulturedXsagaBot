@@ -1,11 +1,11 @@
  [
     {
         "session": "ses1",
-        "token": "8862989503:AAH7UyBB7prr3rQd3hP5VbKXng-WmnKAOXk",
+        "token": "8868188683:AAHqnFzvaugfVDSsFwDRE0tKzE1KN9okgGg",
         "api_id": "39185942",
         "api_hash": "36bb0447e7986c4a81e17b7281980b44",
         "workers": 8,
-        "db_uri": "mongodb+srv://EonOFXRobotv1:EonOFXRobotv1@cluster0.gan1dmk.mongodb.net/?appName=Cluster0",
+        "db_uri": "mongodb+srv://EonOFXbotv1:EonOFXbotv1@cluster0.neabuwh.mongodb.net/?appName=Cluster0",
         "db_name": "OFLIX",
         "fsubs": [],
         "db": -1002162795137,
