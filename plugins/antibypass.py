@@ -9,7 +9,7 @@ from pyrogram import Client
 # =====================================================
 #  CONFIG
 # =====================================================
-GATEWAY_BASE_URL = "https://oggyflix2.vercel.app"
+GATEWAY_BASE_URL = ""
 ACCESS_TOKEN_EXPIRY_MINUTES = 10
 
 
